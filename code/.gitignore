@@ -6,6 +6,7 @@ debug/
 release/
 
 eshared/engine/shaders/globals.hpp
+eshared/engine/shaders/density_functions.hpp
 eshared/engine/shaders/ps_*.hpp
 eshared/engine/shaders/cs_*.hpp
 eshared/engine/shaders/vs_*.hpp
@@ -13,3 +14,5 @@ eshared/engine/shaders/vs_*.hpp
 estudio4/gui/moc_*.cpp
 estudio4/gui/ui_*.h
 estudio4/resources/qrc_*.cpp
+
+enigma4.pro.user
