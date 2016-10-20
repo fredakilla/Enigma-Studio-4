@@ -51,8 +51,9 @@ static const struct InputLayoutInfo
     D3D11_INPUT_ELEMENT_DESC    desc[16];
     eU32                        elements;
     eChar *                     dummyShader;
-}
-INPUT_LAYOUT_INFOS[] =
+};
+
+InputLayoutInfo INPUT_LAYOUT_INFOS[] =
 {
     {   // default vertex
         {
@@ -70,7 +71,7 @@ INPUT_LAYOUT_INFOS[] =
             { "TEXCOORD", 7, DXGI_FORMAT_R32G32B32_FLOAT,    1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         },
         11,
-        "void main(in float4 _01: POSITION0,"\
+        (eChar*)"void main(in float4 _01: POSITION0,"\
         "          in float3 _02: NORMAL0,"  \
         "          in float2 _03: TEXCOORD0,"\
         "          in float4 _04: COLOR0,"   \
@@ -97,7 +98,7 @@ INPUT_LAYOUT_INFOS[] =
             { "TEXCOORD", 7, DXGI_FORMAT_R32G32B32_FLOAT,    1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         },
         9,
-        "void main(in float4 _01: POSITION0,"\
+        (eChar*)"void main(in float4 _01: POSITION0,"\
         "          in float2 _02: TEXCOORD0,"\
         "          in float4 _03: TEXCOORD1,"\
         "          in float4 _04: TEXCOORD2,"\
@@ -115,7 +116,7 @@ INPUT_LAYOUT_INFOS[] =
             { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         },
         3,
-        "void main(in float4 _1: POSITION0, in float2 _2: TEXCOORD0, in float4 _3: COLOR0, out float4 pos: SV_POSITION) { pos = 0; }",
+        (eChar*)"void main(in float4 _1: POSITION0, in float2 _2: TEXCOORD0, in float4 _3: COLOR0, out float4 pos: SV_POSITION) { pos = 0; }",
     }
 };
 

@@ -18,6 +18,9 @@
 // global constants (don't change into
 // constants, it's a size thing!)
 
+#include <math.h>
+#include <intrin.h>
+
 #define eSQRT2          1.41421356237f
 #define ePI             3.1415926535897932384626433832795f
 #define eTWOPI          (ePI*2.0f)
@@ -35,12 +38,14 @@
 #define eELEMENT_COUNT(a)    (sizeof(a)/sizeof(a[0]))
 #define eASSERT_ALIGNED16(x) eASSERT(eU32(x)%16 == 0)
 
+inline void eDebugBreak() { __debugbreak(); }
+
 #ifdef eDEBUG
     #define eASSERT(expr)                                   \
     {                                                       \
         if (!(expr))                                        \
             if (eShowAssertion(#expr, __FILE__, __LINE__))  \
-                __asm int 3                                 \
+                eDebugBreak();                              \
     }
 #else   
     #define eASSERT(x)
@@ -50,8 +55,8 @@
 // versions for release build and memory tracking
 // versions for debug build.
 #if defined(eRELEASE) && defined(ePLAYER)
-    ePtr eCDECL operator new(eU32 size);
-    ePtr eCDECL operator new [] (eU32 size);
+    ePtr eCDECL operator new(size_t size);
+    ePtr eCDECL operator new [] (size_t size);
     void eCDECL operator delete(ePtr ptr);
     void eCDECL operator delete [] (ePtr ptr);
 #else
@@ -62,9 +67,9 @@
     // externally linking 3rd-party libraries
     #undef new
 
-    ePtr eCDECL operator new(eU32 size, const eChar *file, eU32 line);
-    ePtr eCDECL operator new [] (eU32 size, const eChar *file, eU32 line);
-    ePtr eCDECL operator new(eU32 size);
+    ePtr eCDECL operator new(size_t size, const eChar *file, eU32 line);
+    ePtr eCDECL operator new[](size_t size, const eChar *file, eU32 line);
+    ePtr eCDECL operator new(size_t size);
 
     void eCDECL operator delete(ePtr ptr);
     void eCDECL operator delete [] (ePtr ptr);
@@ -90,19 +95,20 @@ eU64    eGetTotalVirtualMemory();
 void    eSetLogHandler(eLogHandler logHandler, ePtr param);
 #endif
 
+
 void    eWriteToLog(const eChar *msg);
 void    eLeakDetectorStart();
 void    eLeakDetectorStop();
 eBool   eShowAssertion(const eChar *exp, const eChar *file, eU32 line);
 void    eShowError(const eChar *error);
 void    eFatal(eU32 exitCode);
-ePtr    eAllocAlignedAndZero(eU32 size, eU32 alignment);
+ePtr    eAllocAlignedAndZero(size_t size, size_t alignment);
 void    eFreeAligned(ePtr ptr);
-ePtr    eMemRealloc(ePtr ptr, eU32 oldLength, eU32 newLength);
-void    eMemSet(ePtr dst, eU8 val, eU32 count);
-void    eMemCopy(ePtr dst, eConstPtr src, eU32 count);
-void    eMemMove(ePtr dst, eConstPtr src, eU32 count);
-eBool   eMemEqual(eConstPtr mem0, eConstPtr mem1, eU32 count);
+ePtr    eMemRealloc(ePtr ptr, size_t oldLength, size_t newLength);
+void    eMemSet(ePtr dst, eU8 val, size_t count);
+void    eMemCopy(ePtr dst, eConstPtr src, size_t count);
+void    eMemMove(ePtr dst, eConstPtr src, size_t count);
+eBool   eMemEqual(eConstPtr mem0,eConstPtr mem1, size_t count);
 void    eStrClear(eChar *str);
 void    eStrCopy(eChar *dst, const eChar *src);
 void    eStrNCopy(eChar *dst, const eChar *src, eU32 count);
@@ -187,14 +193,7 @@ eU16    eMakeWord(eU8 lo, eU8 hi);
 
 eFORCEINLINE eF32 eAbs(eF32 x)
 {
-    __asm
-    {
-        fld     dword ptr [x]
-        fabs
-        fstp    dword ptr [x]
-    }
-
-    return x;
+    return fabsf(x);
 }
 
 eFORCEINLINE eU32 eAbs(eInt x)
@@ -206,24 +205,26 @@ eFORCEINLINE eU32 eAbs(eInt x)
 // default version. must be called explicitly.
 eFORCEINLINE eInt eFtoL(eF32 x)
 {
-    __asm
-    {
-        fld     dword ptr [x]
-        push    eax
-        fistp   dword ptr [esp]
-        pop     eax
-    }
+    //eInt ret = (eInt)x;
+    //return ret;
+    //ret = _mm_cvt_ss2si(_mm_load_ss(&x));
+    return _mm_cvt_ss2si(_mm_load_ss(&x));
+    //return (eInt)(x+0.001) / 1L;
+    //return (eInt)x;
 }
 
 eFORCEINLINE eU64 eDtoULL(eF64 x)
 {
-    __asm
+    long long value_long = static_cast<long long>(x + 0.5);
+    return static_cast<eU64>(value_long);
+
+   /* __asm
     {
         fld     dword ptr [x]
         push    eax
         fistp   dword ptr [esp]
         pop     eax
-    }
+    }*/
 }
 
 eINLINE eU32 eSignBit(eF32 x)

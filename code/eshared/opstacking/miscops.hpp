@@ -209,7 +209,7 @@ public:
         {
         }
 
-        (void*) & genericDataPtr;
+        void*& genericDataPtr;
     };
 
 public:

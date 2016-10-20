@@ -588,4 +588,9 @@
       <Filter>eshared\engine\shaders</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\eshared\opstacking\callfunc.asm">
+      <Filter>eshared\opstacking</Filter>
+    </MASM>
+  </ItemGroup>
 </Project>

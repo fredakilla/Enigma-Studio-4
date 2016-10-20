@@ -63,10 +63,10 @@ static eBool loadingCallback(eU32 processed, eU32 total, ePtr param)
     return (msg != eMSG_QUIT);
 }
 
-#ifdef eDEBUG
+#if defined(eDEBUG) || !defined(eINTRO)
 eInt WINAPI WinMain(HINSTANCE inst, HINSTANCE prevInst, eChar *cmdLine, eInt showCmd)
 #else
-void WinMainCRTStartup()
+eInt WINAPI WinMain(HINSTANCE inst, HINSTANCE prevInst, eChar *cmdLine, eInt showCmd)
 #endif
 {
     eSimdSetArithmeticFlags(eSAF_RTN|eSAF_FTZ);
@@ -168,7 +168,7 @@ void WinMainCRTStartup()
 
     ExitProcess(0);
 
-#ifdef eDEBUG
+#if defined(eDEBUG) || !defined(eINTRO)
     return 0;
 #endif
 }

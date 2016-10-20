@@ -828,10 +828,20 @@
     <CustomBuild Include="..\eshared\engine\shaders\ps_fx_planet.hlsl">
       <Filter>eshared\engine\shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\eshared\engine\shaders\globals.hlsli" />
+    <CustomBuild Include="..\eshared\engine\shaders\globals.hlsli" />
+    <CustomBuild Include="..\eshared\engine\shaders\globals.hlsli" />
+    <CustomBuild Include="..\eshared\engine\shaders\globals.hlsli" />
+    <CustomBuild Include="..\eshared\engine\shaders\globals.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resources\resource.rc">
       <Filter>resources</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\eshared\opstacking\callfunc.asm">
+      <Filter>eshared\opstacking</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

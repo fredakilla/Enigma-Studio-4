@@ -15,6 +15,30 @@
 #ifndef IOPERATOR_HPP
 #define IOPERATOR_HPP
 
+//------------------------------------------------------------------------------------------------------------------
+// helper union to cast pointer to member
+// used to replace original inline assembly
+//------------------------------------------------------------------------------------------------------------------
+template<typename memberT>
+union u_ptm_cast {
+    u_ptm_cast(memberT _pmember) : pmember(_pmember) {};
+    u_ptm_cast(void *_pvoid) : pvoid(_pvoid) {};
+    memberT  pmember;
+    ePtr     pvoid;
+};
+
+template<typename memberT>
+inline memberT memberFromPtr(void *pvoid) {
+    return u_ptm_cast<memberT>(pvoid).pmember;
+}
+
+template<typename memberT>
+inline void* ptrFromMember(memberT pmember) {
+    return u_ptm_cast<memberT>(pmember).pvoid;
+}
+typedef ePtr ePtrMember;
+//------------------------------------------------------------------------------------------------------------------
+
 class eIOperator;
 class eIBitmapOp;
 struct eOpMetaInfos;
@@ -80,7 +104,7 @@ struct eOpMetaInfos
     eOpClass                    output;
     eU32                        type;
 #ifdef eEDITOR
-    ePtr                        execFunc;
+    ePtrMember                  execFunc;
     eIOperator *                (*createOp)();
 #endif
 };

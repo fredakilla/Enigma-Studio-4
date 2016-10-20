@@ -14,7 +14,7 @@
 
 #include "../eshared/system/system.hpp"
 
-#if defined(eRELEASE)
+#if defined(eRELEASE) && defined(eINTRO)
 // call ctors and dtors of static and global variables
 typedef void (eCDECL *ePVFV)();
 
@@ -125,7 +125,7 @@ cs20:
 
 void eGlobalsStaticsInit()
 {
-#ifdef eRELEASE
+#if defined(eRELEASE) && defined(eINTRO)
     initAtExit();
     initTerm(__xc_a, __xc_z); 
 #endif
@@ -133,7 +133,7 @@ void eGlobalsStaticsInit()
 
 void eGlobalsStaticsFree()
 {
-#ifdef eRELEASE
+#if defined(eRELEASE) && defined(eINTRO)
     doAtExit();
 #endif
 }

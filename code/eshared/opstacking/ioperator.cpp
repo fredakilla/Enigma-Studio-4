@@ -701,12 +701,12 @@ void eIOperator::_deinitialize()
 {
 }
 
-#pragma warning(disable : 4731) // ebp changed warning
+extern "C" {void callFunc(const ePtr func,const size_t * stackPtr,eU32 count,eIOperator* opPtr); }
 
 void eIOperator::_callExecute()
 {
     // create array with stack data
-    eU32 *stack = eALLOC_STACK(eU32, m_params.size());
+    size_t *stack = eALLOC_STACK(size_t,m_params.size());
     eU32 count = 0;
 
     for (eInt i=0; i<(eInt)m_params.size(); i++)
@@ -721,37 +721,37 @@ void eIOperator::_callExecute()
         case ePT_FXY:
         case ePT_FXYZ:
         case ePT_FXYZW:
-            stack[count++] = (eU32)&val.fxyz;
+            stack[count++] = (size_t)&val.fxyz;
             break;
 
         case ePT_BOOL:
         case ePT_ENUM:
         case ePT_FLAGS:
         case ePT_INT:
-            stack[count++] = *(eU32 *)&val.integer;
+            stack[count++] = *(size_t *)&val.integer;
             break;
 
         case ePT_FLOAT:
-            stack[count++] = *(eU32 *)&val.flt;
+            stack[count++] = *(size_t *)&val.flt;
             break;
 
         case ePT_STR:
         case ePT_TEXT:
         case ePT_FILE:
-            stack[count++] = (eU32)(const eChar *)val.string;
+            stack[count++] = (size_t)(const eChar *)val.string;
             break;
 
         case ePT_RGB:
         case ePT_RGBA:
-            stack[count++] = (eU32)&val.color;
+            stack[count++] = (size_t)&val.color;
             break;
 
         case ePT_PATH:
-            stack[count++] = (eU32)&val.path;
+            stack[count++] = (size_t)&val.path;
             break;
 
         case ePT_LINK:
-            stack[count++] = (eU32)eDemoData::findOperator(val.linkedOpId);
+            stack[count++] = (size_t)eDemoData::findOperator(val.linkedOpId);
             break;
 #ifdef eEDITOR
         case ePT_LABEL:
@@ -767,30 +767,11 @@ void eIOperator::_callExecute()
 #else
     const ePtr func = globalOpExecFunction(m_metaInfos->type);
 #endif
-    const ePtr stackPtr = (count ? &stack[0] : nullptr);
+    const size_t* stackPtr = (count ? &stack[0] : nullptr);
 
-    __asm
-    {
-        mov     eax, dword ptr [func]     // store stack variables before
-        mov     ebx, dword ptr [this]     // the new stack frame is installed
-        mov     ecx, dword ptr [count]    // (they won't be accessible anymore
-        mov     esi, dword ptr [stackPtr] // afterwards)
-        push    ebp
-        mov     ebp, esp
-        sub     esp, ecx // space for number of parameters * sizeof(eU32) (= 4)
-        sub     esp, ecx
-        sub     esp, ecx
-        sub     esp, ecx
-        mov     edi, esp // copy parameters on stack
-        rep     movsd
-        mov     ecx, ebx // this-call so provide this-pointer
-        call    eax      // this-call requires no stack clean up
-        mov     esp, ebp // remove stack frame
-        pop     ebp
-    }
+    // see : callfunc.asm
+    callFunc(func, stackPtr, count, this);
 }
-
-#pragma warning(default : 4731) // ebp changed warning
 
 void eIOperator::_animateParameters(eF32 time)
 {

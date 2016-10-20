@@ -34,7 +34,7 @@ eF32 eTimer::restart()
     const eF32 elapsedMs = getElapsedMs();
     m_elapsedHist[m_histIndex] = elapsedMs;
     m_histIndex = (m_histIndex+1)%eELEMENT_COUNT(m_elapsedHist);
-    m_histCount = eMin(m_histCount+1, eELEMENT_COUNT(m_elapsedHist));
+    m_histCount = eMin((eU32)m_histCount+1,(eU32)eELEMENT_COUNT(m_elapsedHist));
 
     QueryPerformanceCounter((LARGE_INTEGER *)&m_startTime);
     return elapsedMs;

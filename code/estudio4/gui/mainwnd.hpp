@@ -19,7 +19,7 @@
 #include <QtWidgets/QItemDelegate>
 #include <QtWidgets/QLabel>
 
-#include "ui_mainwnd.hpp"
+#include "ui_mainwnd.h"
 
 // Enigma Studio's application main window
 class eMainWnd : public QMainWindow, public Ui::MainWnd

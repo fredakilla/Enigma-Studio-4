@@ -17,7 +17,7 @@
 
 #include <QtWidgets/QDialog>
 
-#include "ui_linkopdlg.hpp"
+#include "ui_linkopdlg.h"
 #include "../../eshared/eshared.hpp"
 
 class eLinkOpDlg : public QDialog, protected Ui::LinkOpDlg

@@ -272,7 +272,7 @@ eString eDemoScript::getOpParamIfDefs() const
 //				opexec += eString("	__asm { add ebx, 4 };\\\r\n");
 
 				opexec += eString("	case ") + eString(eIntToStr(opType)) + ":\\\r\n";
-				opexec += eString("	__asm { mov eax, dword ptr [") + op->getMetaInfos().className + "::execute] }\\\r\n";
+                opexec += eString("	func = ptrFromMember(&") + op->getMetaInfos().className + "::execute);\\\r\n";
 				opexec += " break;\\\r\n";
 				break;
 			}
@@ -282,7 +282,6 @@ eString eDemoScript::getOpParamIfDefs() const
 	opcreator += "};\\\r\n";
 
 	opexec += "	};\\\r\n";
-	opexec += "__asm { mov dword ptr [func], eax }\\\r\n";
 	opexec += "return func;}\r\n";
 //	opexec += "return funcs[opType];}\r\n";
 

@@ -11,9 +11,9 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Qt_User_Interface_Compiler>
-      <CommandLineTemplate>"$(QTDIR)\bin\uic.exe" "%(FullPath)" -o "%(RootDir)%(Directory)ui_%(Filename).hpp"</CommandLineTemplate>
-      <Outputs>%(RootDir)%(Directory)ui_%(Filename).hpp</Outputs>
-      <ExecutionDescription>Creating UI include file "ui_%(Filename).hpp"</ExecutionDescription>
+      <CommandLineTemplate>"$(QTDIR)\bin\uic.exe" "%(FullPath)" -o "%(RootDir)%(Directory)ui_%(Filename).h"</CommandLineTemplate>
+      <Outputs>%(RootDir)%(Directory)ui_%(Filename).h</Outputs>
+      <ExecutionDescription>Creating UI include file "ui_%(Filename).h"</ExecutionDescription>
     </Qt_User_Interface_Compiler>
   </ItemDefinitionGroup>
   <PropertyGroup

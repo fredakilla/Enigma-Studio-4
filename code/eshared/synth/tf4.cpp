@@ -552,7 +552,8 @@ void eTfGeneratorUpdate(eTfSynth &synth, eTfInstrument &instr, eTfVoice &voice, 
 
                 if (dist < 5.0f)
                 {
-                    eU32 expLookup = eFtoL(dist / 5.0f * (TF_MAXFRAMESIZE-1)); 
+                    eU32 expLookup = eFtoL(dist / 5.0f * (TF_MAXFRAMESIZE-1));
+                    eASSERT(expLookup >= 0 && expLookup < TF_MAXFRAMESIZE);
                     eF32 exp = synth.expBuffer[expLookup];
                     exp *= *volumePtr;
                     amp += exp;

@@ -15,6 +15,8 @@
 #ifndef OP_MACROS_HPP
 #define OP_MACROS_HPP
 
+#include "ioperator.hpp" // for ePtrMember macro
+
 #ifdef eEDITOR
 	#define eDEF_OPERATOR_SOURCECODE_INTERNAL(CLASSNAME)				\
 		class CLASSNAME {												\
@@ -108,10 +110,8 @@
         {                                                                                               \
             RegisterExecFunc()                                                                          \
             {                                                                                           \
-                ePtr func = nullptr;                                                                    \
-                __asm { mov eax, dword ptr [classT::execute] }                                          \
-                __asm { mov dword ptr [func], eax }                                                     \
-                classT##MetaInfos.execFunc = func;                                                      \
+                                                                                                        \
+                classT##MetaInfos.execFunc = ptrFromMember(&classT::execute);                           \
                 classT##MetaInfos.createOp = classT##CreateInstance;                                    \
                 getAllMetaInfos().append(&classT##MetaInfos);                                           \
             }                                                                                           \

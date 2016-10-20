@@ -18,7 +18,7 @@
 #include <QtCore/QFile>
 #include <QtCore/QDir>
 
-Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+//Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 
 #include "gui/mainwnd.hpp"
 #include "../configinfo.hpp"
