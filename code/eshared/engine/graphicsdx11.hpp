@@ -129,6 +129,10 @@ struct eGeoBufferDx11
     eU32                        pos;
     eU32                        allocs;
     ID3D11Buffer *              d3dBuf;
+
+    // BGFX
+    bgfx::VertexBufferHandle    bgfxVBuf;
+    bgfx::IndexBufferHandle     bgfxIBuf;
 };
 
 struct eIShaderDx11
@@ -168,7 +172,7 @@ struct eGeometryDx11
     eGeoFillCallback            fillCb;
     ePtr                        fcParam;
     eGeoBufferDx11 *            vb;
-    eGeoBufferDx11 *            ib;
+    eGeoBufferDx11 *            ib;    
 };
 
 struct eIConstBufferDx11

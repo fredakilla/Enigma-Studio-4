@@ -20,6 +20,85 @@
 
 #include "../eshared.hpp"
 
+
+
+struct FullVertexFormat
+{
+    eF32 pos[3];
+    eF32 normal[3];
+    eF32 tex0[2];
+    eU32 color;
+    eF32 tex1[4];
+    eF32 tex2[4];
+    eF32 tex3[4];
+    eF32 tex4[4];
+    eF32 tex5[3];
+    eF32 tex6[3];
+    eF32 tex7[3];
+
+    static void init()
+    {
+        ms_decl
+            .begin()
+            .add(bgfx::Attrib::Position,    3, bgfx::AttribType::Float)
+            .add(bgfx::Attrib::Normal,      3, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::TexCoord0,   2, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::Color0,      4, bgfx::AttribType::Uint8, true)
+            .add(bgfx::Attrib::TexCoord1,   4, bgfx::AttribType::Float)         // transformation matrix
+            .add(bgfx::Attrib::TexCoord2,   4, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::TexCoord3,   4, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::TexCoord4,   4, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::TexCoord5,   3, bgfx::AttribType::Float, true)   // normal matrix
+            .add(bgfx::Attrib::TexCoord6,   3, bgfx::AttribType::Float, true)
+            .add(bgfx::Attrib::TexCoord7,   3, bgfx::AttribType::Float, true)
+            .end();
+    };
+
+    static bgfx::VertexDecl ms_decl;
+};
+
+bgfx::VertexDecl FullVertexFormat::ms_decl;
+
+
+
+bgfx::ProgramHandle loadProgram(const eChar * _vsName, const eChar * _fsName)
+{
+    eU32 vsSize = 0;
+    eU32 fsSize = 0;
+
+    eBool success;
+    eByteArray vs = eFile::readAll(_vsName, &success);
+    eASSERT(success);
+    eByteArray fs = eFile::readAll(_fsName, &success);
+    eASSERT(success);
+
+    const bgfx::Memory* memvs = bgfx::alloc(vsSize + 1);
+    const bgfx::Memory* memfs = bgfx::alloc(fsSize + 1);
+
+    eMemCopy((void *)memvs->data, (void *)&vs[0], vsSize);
+    eMemCopy((void *)memfs->data, (void *)&fs[0], fsSize);
+
+    memvs->data[memvs->size - 1] = '\0';
+    memfs->data[memfs->size - 1] = '\0';
+
+    bgfx::ShaderHandle vsh = bgfx::createShader(memvs);
+    eASSERT(isValid(vsh));
+
+    bgfx::ShaderHandle fsh = bgfx::createShader(memfs);
+    eASSERT(isValid(fsh));
+
+    bgfx::ProgramHandle pgh = bgfx::createProgram(vsh,fsh,true);
+    eASSERT(isValid(pgh));
+
+    return pgh;
+}
+
+
+
+
+
+
+
 static void eCallDx(const HRESULT res)
 {
     eASSERT(!FAILED(res));
@@ -425,6 +504,9 @@ void eGraphicsDx11::beginFrame()
 
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 1, 0x4f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
+
+
+    //loadProgram("vs_cubes", "fs_cubes");
 }
 
 void eGraphicsDx11::endFrame()
@@ -750,6 +832,22 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
 
         m_geoMapData[1].resize(reqIbSize);
         *indices = &m_geoMapData[1][0];
+
+
+        // BGFX
+
+        geo->vb->bgfxVBuf = bgfx::createVertexBuffer(
+                        // Static data can be passed with bgfx::makeRef
+                        bgfx::makeRef(vertices, sizeof(reqVbSize) )
+                        , FullVertexFormat::ms_decl
+                        );
+
+        geo->vb->bgfxIBuf = bgfx::createIndexBuffer(
+                        // Static data can be passed with bgfx::makeRef
+                        bgfx::makeRef(indices, sizeof(reqIbSize) )
+                        );
+
+
     }
 
     geo->vb->allocs++;
@@ -925,6 +1023,34 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
         else
             m_devCtx->Draw(geo->usedVerts, 0);
     }
+
+
+    // BGFX
+
+
+    /*float mtx[16];
+    bx::mtxRotateXY(mtx, time + xx*0.21f, time + yy*0.37f);
+    mtx[12] = -15.0f + float(xx)*3.0f;
+    mtx[13] = -15.0f + float(yy)*3.0f;
+    mtx[14] = 0.0f;
+
+    // Set model matrix for rendering.
+    bgfx::setTransform(mtx);*/
+
+    // Set vertex and index buffer.
+    //bgfx::setVertexBuffer(geo->vb->bgfxVBuf);
+    //bgfx::setIndexBuffer(geo->ib->bgfxIBuf);
+
+    // Set render states.
+    bgfx::setState(0
+                   | BGFX_STATE_DEFAULT
+                   | BGFX_STATE_PT_TRISTRIP
+                   );
+
+    // Submit primitive for rendering to view 0.
+    //bgfx::submit(0, geo->);
+
+
 }
 
 eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags, eTextureFormat format)
@@ -1499,6 +1625,11 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
     bgfx::init();
     bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
+
+    FullVertexFormat::init();
+
+
+    //----------------------------------
 
 
 
