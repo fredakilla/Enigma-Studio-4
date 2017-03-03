@@ -16,6 +16,8 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+#include <bgfx/bgfx.h>
+
 #include "../eshared.hpp"
 
 static void eCallDx(const HRESULT res)
@@ -203,20 +205,6 @@ eGraphicsDx11::~eGraphicsDx11()
 
 void eGraphicsDx11::initialize()
 {
-    eASSERT(m_hwnd);
-
-    bgfx::PlatformData pd;
-    pd.ndt          = NULL;
-    pd.nwh          = m_hwnd;
-    pd.context      = NULL;
-    pd.backBuffer   = NULL;
-    pd.backBufferDS = NULL;
-    bgfx::setPlatformData(pd);
-
-    bgfx::init();
-
-
-
     eCallDx(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (ePtr *)&m_dxgiFactory));
     
     if (!FAILED(m_dxgiFactory->EnumAdapters1(0, &m_adapter)))
@@ -373,35 +361,53 @@ void eGraphicsDx11::resizeBackbuffer(eU32 width, eU32 height)
             eCallDx(m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
             _createRenderTargetView();
             _createDepthStencilView();
+
+            bgfx::reset(width, height, BGFX_RESET_NONE);
         }
     }
 }
 
 void eGraphicsDx11::clear(eInt clearMode, const eColor &col)
 {
-    _activateRenderState();
+    //@@_activateRenderState();
+    //@@
+    //@@// color target has to be cleared?
+    //@@if (clearMode&eCM_COLOR)
+    //@@{
+    //@@    eVector4 fc;
+    //@@    fc = col;
+    //@@
+    //@@    for (eU32 i=0; i<eGFX_MAXMRT; i++)
+    //@@        if (m_rtvsActive[i])
+    //@@            m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
+    //@@}
+    //@@
+    //@@
+    //@@// depth/stencil target has to be cleared?
+    //@@eU32 clear = 0;
+    //@@
+    //@@if (clearMode&eCM_DEPTH)
+    //@@    clear |= D3D11_CLEAR_DEPTH;
+    //@@if (clearMode&eCM_STENCIL)
+    //@@    clear |= D3D11_CLEAR_STENCIL;
+    //@@
+    //@@if (clear)
+    //@@    m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
 
-    // color target has to be cleared?
+
+
+    // BGFX
+
+    uint16_t clear = BGFX_CLEAR_NONE;
+
     if (clearMode&eCM_COLOR)
-    {
-        eVector4 fc;
-        fc = col;
-
-        for (eU32 i=0; i<eGFX_MAXMRT; i++)
-            if (m_rtvsActive[i])
-                m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
-    }
-
-    // depth/stencil target has to be cleared?
-    eU32 clear = 0;
-        
+        clear |= BGFX_CLEAR_COLOR;
     if (clearMode&eCM_DEPTH)
-        clear |= D3D11_CLEAR_DEPTH;
+        clear |= BGFX_CLEAR_DEPTH;
     if (clearMode&eCM_STENCIL)
-        clear |= D3D11_CLEAR_STENCIL;
+        clear |= BGFX_CLEAR_STENCIL;
 
-    if (clear)
-        m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
+    bgfx::setViewClear(0, clear, 0x3030aaff, 1.0f, 0);
 }
 
 void eGraphicsDx11::beginFrame()
@@ -410,7 +416,15 @@ void eGraphicsDx11::beginFrame()
     eMemSet(&m_renderStats, 0, sizeof(m_renderStats));
 #endif
 
-    m_devCtx->Begin(m_occlQuery[m_frameNum]);
+    //@@m_devCtx->Begin(m_occlQuery[m_frameNum]);
+
+
+    // BGFX
+
+    bgfx::touch(0);
+
+    bgfx::dbgTextClear();
+    bgfx::dbgTextPrintf(0, 1, 0x4f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
 }
 
 void eGraphicsDx11::endFrame()
@@ -427,7 +441,9 @@ void eGraphicsDx11::endFrame()
 #endif
 
     ePROFILER_FUNC();
-    eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
+    //@@eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
+
+    bgfx::frame();
 
     // prevents stuttering
     m_devCtx->End(m_occlQuery[m_frameNum]);
@@ -1470,6 +1486,22 @@ ePtr eGraphicsDx11::_createWindow(eU32 width, eU32 height, eBool fullScreen)
 
 void eGraphicsDx11::_createDeviceAndSwapChain()
 {
+    eASSERT(m_hwnd);
+
+    bgfx::PlatformData pd;
+    pd.ndt          = NULL;
+    pd.nwh          = m_hwnd;
+    pd.context      = NULL;
+    pd.backBuffer   = NULL;
+    pd.backBufferDS = NULL;
+    bgfx::setPlatformData(pd);
+
+    bgfx::init();
+    bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
+    bgfx::setDebug(BGFX_DEBUG_TEXT);
+
+
+
     DXGI_SWAP_CHAIN_DESC desc;
     eMemSet(&desc, 0, sizeof(desc));
     desc.BufferCount = 1;
@@ -1959,6 +1991,9 @@ void eGraphicsDx11::_activateRenderState()
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         m_devCtx->RSSetViewports(1, &viewport);
+
+
+        bgfx::setViewRect(0, 0, 0, uint16_t(vp.getWidth()), uint16_t(vp.getHeight()) );
     }
    
     // activate shaders
