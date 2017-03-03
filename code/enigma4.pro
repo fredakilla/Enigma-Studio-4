@@ -23,7 +23,7 @@ LIBS += callfunc.obj
 # user paths
 #--------------------------------------------------------------------
 
-win32: MYLIBS = C:/libraries
+win32: MYLIBS = C:/github
 unix:!macx: MYLIBS = /home/fred/libraries
 
 #--------------------------------------------------------------------
@@ -120,9 +120,33 @@ DEFINES -= UNICODE
 DEFINES += _MBCS
 
 
+win32: DEFINES +=   _HAS_ITERATOR_DEBUGGING=1 \
+                    _ITERATOR_DEBUG_LEVEL=2
+
+
+
+#--------------------------------------------------------------------
+# libraries includes
+#--------------------------------------------------------------------
+
+INCLUDEPATH += $${MYLIBS}/bgfx/include
+INCLUDEPATH += $${MYLIBS}/bx/include
+
+
 #--------------------------------------------------------------------
 # libraries link
 #--------------------------------------------------------------------
+
+CONFIG(debug,debug|release) {
+#message( debug )
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxDebug
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbxDebug
+} else {
+#message( release )
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxRelease
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbxRelease
+}
+
 
 win32:LIBS +=   kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib \
                 ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib wsock32.lib opengl32.lib glu32.lib version.lib \
@@ -225,7 +249,8 @@ HEADERS += \
     estudio4/gui/timelineview.hpp \
     estudio4/gui/trackedit.hpp \
     estudio4/resources/resource.h \    
-    configinfo.hpp \
+    configinfo.hpp
+
   
    
 
@@ -309,6 +334,7 @@ SOURCES += \
     estudio4/gui/timelineview.cpp \
     estudio4/gui/trackedit.cpp \    
     estudio4/estudio4.cpp
+
 
    
 RESOURCES += \

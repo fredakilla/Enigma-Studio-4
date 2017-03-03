@@ -34,8 +34,8 @@ eEngine::eEngine()
 eEngine::eEngine(eInt windowFlags, const eSize &wndSize, ePtr hwnd)
 {
     eGfx = new eGraphics;
-    eGfx->initialize();
     openWindow(windowFlags, wndSize, hwnd);
+    eGfx->initialize();
 }
 
 eEngine::~eEngine()

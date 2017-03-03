@@ -203,6 +203,20 @@ eGraphicsDx11::~eGraphicsDx11()
 
 void eGraphicsDx11::initialize()
 {
+    eASSERT(m_hwnd);
+
+    bgfx::PlatformData pd;
+    pd.ndt          = NULL;
+    pd.nwh          = m_hwnd;
+    pd.context      = NULL;
+    pd.backBuffer   = NULL;
+    pd.backBufferDS = NULL;
+    bgfx::setPlatformData(pd);
+
+    bgfx::init();
+
+
+
     eCallDx(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (ePtr *)&m_dxgiFactory));
     
     if (!FAILED(m_dxgiFactory->EnumAdapters1(0, &m_adapter)))
@@ -293,6 +307,9 @@ void eGraphicsDx11::shutdown()
         DestroyWindow((HWND)m_hwnd);
         m_hwnd = nullptr;
     }
+
+    // Shutdown bgfx.
+    bgfx::shutdown();
 }
 
 void eGraphicsDx11::openWindow(eU32 width, eU32 height, eInt windowFlags, ePtr hwnd)

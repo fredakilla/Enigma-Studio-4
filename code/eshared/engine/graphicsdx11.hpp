@@ -15,6 +15,9 @@
 #ifndef GRAPHICS_DX11_HPP
 #define GRAPHICS_DX11_HPP
 
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+
 struct ID3D11Device;
 struct ID3D11Buffer;
 struct ID3D11UnorderedAccessView;
