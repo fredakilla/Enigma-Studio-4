@@ -15,9 +15,6 @@
 #ifndef GRAPHICS_DX11_HPP
 #define GRAPHICS_DX11_HPP
 
-#include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
-
 struct ID3D11Device;
 struct ID3D11Buffer;
 struct ID3D11UnorderedAccessView;
@@ -129,10 +126,6 @@ struct eGeoBufferDx11
     eU32                        pos;
     eU32                        allocs;
     ID3D11Buffer *              d3dBuf;
-
-    // BGFX
-    bgfx::VertexBufferHandle    bgfxVBuf;
-    bgfx::IndexBufferHandle     bgfxIBuf;
 };
 
 struct eIShaderDx11
@@ -172,7 +165,7 @@ struct eGeometryDx11
     eGeoFillCallback            fillCb;
     ePtr                        fcParam;
     eGeoBufferDx11 *            vb;
-    eGeoBufferDx11 *            ib;    
+    eGeoBufferDx11 *            ib;
 };
 
 struct eIConstBufferDx11

@@ -16,88 +16,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-#include <bgfx/bgfx.h>
-
 #include "../eshared.hpp"
-
-
-
-struct FullVertexFormat
-{
-    eF32 pos[3];
-    eF32 normal[3];
-    eF32 tex0[2];
-    eU32 color;
-    eF32 tex1[4];
-    eF32 tex2[4];
-    eF32 tex3[4];
-    eF32 tex4[4];
-    eF32 tex5[3];
-    eF32 tex6[3];
-    eF32 tex7[3];
-
-    static void init()
-    {
-        ms_decl
-            .begin()
-            .add(bgfx::Attrib::Position,    3, bgfx::AttribType::Float)
-            .add(bgfx::Attrib::Normal,      3, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::TexCoord0,   2, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::Color0,      4, bgfx::AttribType::Uint8, true)
-            .add(bgfx::Attrib::TexCoord1,   4, bgfx::AttribType::Float)         // transformation matrix
-            .add(bgfx::Attrib::TexCoord2,   4, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::TexCoord3,   4, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::TexCoord4,   4, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::TexCoord5,   3, bgfx::AttribType::Float, true)   // normal matrix
-            .add(bgfx::Attrib::TexCoord6,   3, bgfx::AttribType::Float, true)
-            .add(bgfx::Attrib::TexCoord7,   3, bgfx::AttribType::Float, true)
-            .end();
-    };
-
-    static bgfx::VertexDecl ms_decl;
-};
-
-bgfx::VertexDecl FullVertexFormat::ms_decl;
-
-
-
-bgfx::ProgramHandle loadProgram(const eChar * _vsName, const eChar * _fsName)
-{
-    eU32 vsSize = 0;
-    eU32 fsSize = 0;
-
-    eBool success;
-    eByteArray vs = eFile::readAll(_vsName, &success);
-    eASSERT(success);
-    eByteArray fs = eFile::readAll(_fsName, &success);
-    eASSERT(success);
-
-    const bgfx::Memory* memvs = bgfx::alloc(vsSize + 1);
-    const bgfx::Memory* memfs = bgfx::alloc(fsSize + 1);
-
-    eMemCopy((void *)memvs->data, (void *)&vs[0], vsSize);
-    eMemCopy((void *)memfs->data, (void *)&fs[0], fsSize);
-
-    memvs->data[memvs->size - 1] = '\0';
-    memfs->data[memfs->size - 1] = '\0';
-
-    bgfx::ShaderHandle vsh = bgfx::createShader(memvs);
-    eASSERT(isValid(vsh));
-
-    bgfx::ShaderHandle fsh = bgfx::createShader(memfs);
-    eASSERT(isValid(fsh));
-
-    bgfx::ProgramHandle pgh = bgfx::createProgram(vsh,fsh,true);
-    eASSERT(isValid(pgh));
-
-    return pgh;
-}
-
-
-
-
-
-
 
 static void eCallDx(const HRESULT res)
 {
@@ -374,9 +293,6 @@ void eGraphicsDx11::shutdown()
         DestroyWindow((HWND)m_hwnd);
         m_hwnd = nullptr;
     }
-
-    // Shutdown bgfx.
-    bgfx::shutdown();
 }
 
 void eGraphicsDx11::openWindow(eU32 width, eU32 height, eInt windowFlags, ePtr hwnd)
@@ -440,53 +356,35 @@ void eGraphicsDx11::resizeBackbuffer(eU32 width, eU32 height)
             eCallDx(m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
             _createRenderTargetView();
             _createDepthStencilView();
-
-            bgfx::reset(width, height, BGFX_RESET_NONE);
         }
     }
 }
 
 void eGraphicsDx11::clear(eInt clearMode, const eColor &col)
 {
-    //@@_activateRenderState();
-    //@@
-    //@@// color target has to be cleared?
-    //@@if (clearMode&eCM_COLOR)
-    //@@{
-    //@@    eVector4 fc;
-    //@@    fc = col;
-    //@@
-    //@@    for (eU32 i=0; i<eGFX_MAXMRT; i++)
-    //@@        if (m_rtvsActive[i])
-    //@@            m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
-    //@@}
-    //@@
-    //@@
-    //@@// depth/stencil target has to be cleared?
-    //@@eU32 clear = 0;
-    //@@
-    //@@if (clearMode&eCM_DEPTH)
-    //@@    clear |= D3D11_CLEAR_DEPTH;
-    //@@if (clearMode&eCM_STENCIL)
-    //@@    clear |= D3D11_CLEAR_STENCIL;
-    //@@
-    //@@if (clear)
-    //@@    m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
+    _activateRenderState();
 
-
-
-    // BGFX
-
-    uint16_t clear = BGFX_CLEAR_NONE;
-
+    // color target has to be cleared?
     if (clearMode&eCM_COLOR)
-        clear |= BGFX_CLEAR_COLOR;
-    if (clearMode&eCM_DEPTH)
-        clear |= BGFX_CLEAR_DEPTH;
-    if (clearMode&eCM_STENCIL)
-        clear |= BGFX_CLEAR_STENCIL;
+    {
+        eVector4 fc;
+        fc = col;
 
-    bgfx::setViewClear(0, clear, 0x3030aaff, 1.0f, 0);
+        for (eU32 i=0; i<eGFX_MAXMRT; i++)
+            if (m_rtvsActive[i])
+                m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
+    }
+
+    // depth/stencil target has to be cleared?
+    eU32 clear = 0;
+        
+    if (clearMode&eCM_DEPTH)
+        clear |= D3D11_CLEAR_DEPTH;
+    if (clearMode&eCM_STENCIL)
+        clear |= D3D11_CLEAR_STENCIL;
+
+    if (clear)
+        m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
 }
 
 void eGraphicsDx11::beginFrame()
@@ -495,18 +393,7 @@ void eGraphicsDx11::beginFrame()
     eMemSet(&m_renderStats, 0, sizeof(m_renderStats));
 #endif
 
-    //@@m_devCtx->Begin(m_occlQuery[m_frameNum]);
-
-
-    // BGFX
-
-    bgfx::touch(0);
-
-    bgfx::dbgTextClear();
-    bgfx::dbgTextPrintf(0, 1, 0x4f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
-
-
-    //loadProgram("vs_cubes", "fs_cubes");
+    m_devCtx->Begin(m_occlQuery[m_frameNum]);
 }
 
 void eGraphicsDx11::endFrame()
@@ -523,9 +410,7 @@ void eGraphicsDx11::endFrame()
 #endif
 
     ePROFILER_FUNC();
-    //@@eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
-
-    bgfx::frame();
+    eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
 
     // prevents stuttering
     m_devCtx->End(m_occlQuery[m_frameNum]);
@@ -832,22 +717,6 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
 
         m_geoMapData[1].resize(reqIbSize);
         *indices = &m_geoMapData[1][0];
-
-
-        // BGFX
-
-        geo->vb->bgfxVBuf = bgfx::createVertexBuffer(
-                        // Static data can be passed with bgfx::makeRef
-                        bgfx::makeRef(vertices, sizeof(reqVbSize) )
-                        , FullVertexFormat::ms_decl
-                        );
-
-        geo->vb->bgfxIBuf = bgfx::createIndexBuffer(
-                        // Static data can be passed with bgfx::makeRef
-                        bgfx::makeRef(indices, sizeof(reqIbSize) )
-                        );
-
-
     }
 
     geo->vb->allocs++;
@@ -1023,34 +892,6 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
         else
             m_devCtx->Draw(geo->usedVerts, 0);
     }
-
-
-    // BGFX
-
-
-    /*float mtx[16];
-    bx::mtxRotateXY(mtx, time + xx*0.21f, time + yy*0.37f);
-    mtx[12] = -15.0f + float(xx)*3.0f;
-    mtx[13] = -15.0f + float(yy)*3.0f;
-    mtx[14] = 0.0f;
-
-    // Set model matrix for rendering.
-    bgfx::setTransform(mtx);*/
-
-    // Set vertex and index buffer.
-    //bgfx::setVertexBuffer(geo->vb->bgfxVBuf);
-    //bgfx::setIndexBuffer(geo->ib->bgfxIBuf);
-
-    // Set render states.
-    bgfx::setState(0
-                   | BGFX_STATE_DEFAULT
-                   | BGFX_STATE_PT_TRISTRIP
-                   );
-
-    // Submit primitive for rendering to view 0.
-    //bgfx::submit(0, geo->);
-
-
 }
 
 eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags, eTextureFormat format)
@@ -1612,27 +1453,6 @@ ePtr eGraphicsDx11::_createWindow(eU32 width, eU32 height, eBool fullScreen)
 
 void eGraphicsDx11::_createDeviceAndSwapChain()
 {
-    eASSERT(m_hwnd);
-
-    bgfx::PlatformData pd;
-    pd.ndt          = NULL;
-    pd.nwh          = m_hwnd;
-    pd.context      = NULL;
-    pd.backBuffer   = NULL;
-    pd.backBufferDS = NULL;
-    bgfx::setPlatformData(pd);
-
-    bgfx::init();
-    bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
-    bgfx::setDebug(BGFX_DEBUG_TEXT);
-
-    FullVertexFormat::init();
-
-
-    //----------------------------------
-
-
-
     DXGI_SWAP_CHAIN_DESC desc;
     eMemSet(&desc, 0, sizeof(desc));
     desc.BufferCount = 1;
@@ -2122,9 +1942,6 @@ void eGraphicsDx11::_activateRenderState()
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         m_devCtx->RSSetViewports(1, &viewport);
-
-
-        bgfx::setViewRect(0, 0, 0, uint16_t(vp.getWidth()), uint16_t(vp.getHeight()) );
     }
    
     // activate shaders
