@@ -172,6 +172,7 @@ enum eDepthBias
 
 enum eWindowFlags
 {
+    eWF_NONE       = 0x00,
     eWF_FULLSCREEN = 0x01,
     eWF_VSYNC      = 0x02,
 };
