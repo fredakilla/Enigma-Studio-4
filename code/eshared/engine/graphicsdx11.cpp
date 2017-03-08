@@ -698,25 +698,28 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
         m_geoMapData[0].resize(reqVbSize);
         *vertices = &m_geoMapData[0][0];
 
-        // ib
-        for (eU32 i=GBID_BUFS_USER; i<m_geoBufs.size(); i++)
+        if (geo->indexed)
         {
-            if (!m_geoBufs[i]->isVb)
+            // ib
+            for (eU32 i=GBID_BUFS_USER; i<m_geoBufs.size(); i++)
             {
-                const eU32 newPos = m_geoBufs[i]->pos+reqIbSize;
-                if (newPos < m_geoBufs[i]->size)
+                if (!m_geoBufs[i]->isVb)
                 {
-                    geo->ib = m_geoBufs[i];
-                    break;
+                    const eU32 newPos = m_geoBufs[i]->pos+reqIbSize;
+                    if (newPos < m_geoBufs[i]->size)
+                    {
+                        geo->ib = m_geoBufs[i];
+                        break;
+                    }
                 }
             }
+
+            if (!geo->ib)
+                geo->ib = _createGeoBuffer(eFALSE, eMax(reqIbSize, (eU32)GBS_IB_DYN), eFALSE);
+
+            m_geoMapData[1].resize(reqIbSize);
+            *indices = &m_geoMapData[1][0];
         }
-
-        if (!geo->ib)
-            geo->ib = _createGeoBuffer(eFALSE, eMax(reqIbSize, (eU32)GBS_IB_DYN), eFALSE);
-
-        m_geoMapData[1].resize(reqIbSize);
-        *indices = &m_geoMapData[1][0];
     }
 
     geo->vb->allocs++;
