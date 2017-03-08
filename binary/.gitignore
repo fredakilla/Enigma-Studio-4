@@ -1,1 +1,4 @@
 enigma4.*
+*.exe
+*.ilk
+*.pdb
