@@ -16,7 +16,13 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+#include <shaderc.h>
+
 #include "../eshared.hpp"
+
 
 static void eCallDx(const HRESULT res)
 {
@@ -285,6 +291,8 @@ void eGraphicsDx11::shutdown()
     eReleaseCom(m_devCtx);
     eReleaseCom(m_dev);
 
+    bgfx::shutdown();
+
     if (m_fullScreen)
         ShowCursor(TRUE);
 
@@ -313,7 +321,7 @@ void eGraphicsDx11::openWindow(eU32 width, eU32 height, eInt windowFlags, ePtr h
         m_ownWindow = eTRUE;
     }
 
-    //_createDeviceAndSwapChain();
+    _createDeviceAndSwapChain();
     _createRenderTargetView();
     _createDepthStencilView();
     _createDynamicBuffers();
@@ -356,6 +364,8 @@ void eGraphicsDx11::resizeBackbuffer(eU32 width, eU32 height)
             eCallDx(m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
             _createRenderTargetView();
             _createDepthStencilView();
+
+            bgfx::reset(width, height, BGFX_RESET_NONE);
         }
     }
 }
@@ -364,27 +374,38 @@ void eGraphicsDx11::clear(eInt clearMode, const eColor &col)
 {
     _activateRenderState();
 
-    // color target has to be cleared?
+    //@@// color target has to be cleared?
+    //@@if (clearMode&eCM_COLOR)
+    //@@{
+    //@@    eVector4 fc;
+    //@@    fc = col;
+    //@@
+    //@@    for (eU32 i=0; i<eGFX_MAXMRT; i++)
+    //@@        if (m_rtvsActive[i])
+    //@@            m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
+    //@@}
+    //@@
+    //@@// depth/stencil target has to be cleared?
+    //@@eU32 clear = 0;
+    //@@
+    //@@if (clearMode&eCM_DEPTH)
+    //@@    clear |= D3D11_CLEAR_DEPTH;
+    //@@if (clearMode&eCM_STENCIL)
+    //@@    clear |= D3D11_CLEAR_STENCIL;
+    //@@
+    //@@if (clear)
+    //@@    m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
+
+    uint16_t clear = BGFX_CLEAR_NONE;
+
     if (clearMode&eCM_COLOR)
-    {
-        eVector4 fc;
-        fc = col;
-
-        for (eU32 i=0; i<eGFX_MAXMRT; i++)
-            if (m_rtvsActive[i])
-                m_devCtx->ClearRenderTargetView(m_rtvsActive[i], &fc.x);
-    }
-
-    // depth/stencil target has to be cleared?
-    eU32 clear = 0;
-        
+        clear |= BGFX_CLEAR_COLOR;
     if (clearMode&eCM_DEPTH)
-        clear |= D3D11_CLEAR_DEPTH;
+        clear |= BGFX_CLEAR_DEPTH;
     if (clearMode&eCM_STENCIL)
-        clear |= D3D11_CLEAR_STENCIL;
+        clear |= BGFX_CLEAR_STENCIL;
 
-    if (clear)
-        m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
+    bgfx::setViewClear(0, clear, 0x223355aa, 1.0f, 0);
 }
 
 void eGraphicsDx11::beginFrame()
@@ -393,7 +414,11 @@ void eGraphicsDx11::beginFrame()
     eMemSet(&m_renderStats, 0, sizeof(m_renderStats));
 #endif
 
-    m_devCtx->Begin(m_occlQuery[m_frameNum]);
+    //@@m_devCtx->Begin(m_occlQuery[m_frameNum]);
+
+    bgfx::touch(0);
+    bgfx::dbgTextClear();
+    bgfx::dbgTextPrintf(0, 1, 0x4f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
 }
 
 void eGraphicsDx11::endFrame()
@@ -410,10 +435,11 @@ void eGraphicsDx11::endFrame()
 #endif
 
     ePROFILER_FUNC();
-    eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
+    //@@eCallDx(m_swapChain->Present(m_vsync ? 1 : 0, 0));
+    bgfx::frame();
 
     // prevents stuttering
-    m_devCtx->End(m_occlQuery[m_frameNum]);
+    //@@m_devCtx->End(m_occlQuery[m_frameNum]);
     ++m_frameNum %= FRAMES;
 
     if (!m_frameNum)
@@ -1454,8 +1480,60 @@ ePtr eGraphicsDx11::_createWindow(eU32 width, eU32 height, eBool fullScreen)
     }
 }
 
+
+
 void eGraphicsDx11::_createDeviceAndSwapChain()
 {
+    eASSERT(m_hwnd);
+
+    bgfx::PlatformData pd;
+    pd.ndt          = NULL;
+    pd.nwh          = m_hwnd;
+    pd.context      = NULL;
+    pd.backBuffer   = NULL;
+    pd.backBufferDS = NULL;
+    bgfx::setPlatformData(pd);
+
+    bgfx::init();
+    bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
+    bgfx::setDebug(BGFX_DEBUG_TEXT);
+
+
+    // test runtime compiling bgfx shader
+
+    int argc = 13;
+    const char* argv[16];
+
+    argv[0] = "-f";
+    argv[1] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.hlsl";
+    argv[2] = "-o";
+    argv[3] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.bin";
+    argv[4] = "--varyingdef";
+    argv[5] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/varying.def.sc";
+    argv[6] = "--type";
+    argv[7] = "v";
+    argv[8] = "--platform";
+    argv[9] = "windows";
+    argv[10] = "--profile";
+    argv[11] = "vs_5_0";
+    argv[12] = "--raw";
+
+
+    char _outputText[2048];
+    eU16 _outputSize;
+
+    int ret = bgfx::compileShader(argc, argv);
+    bgfx::getShaderError(_outputText, _outputSize);
+
+    if(ret)
+        eShowError(_outputText);
+
+    //FullVertexFormat::init();
+    //g_programHandle = loadBGFXProgram("C:/github/Enigma-Studio-4/binary/shaders/vs.bin", "C:/github/Enigma-Studio-4/binary/shaders/fs.bin");
+
+
+
+
     DXGI_SWAP_CHAIN_DESC desc;
     eMemSet(&desc, 0, sizeof(desc));
     desc.BufferCount = 1;

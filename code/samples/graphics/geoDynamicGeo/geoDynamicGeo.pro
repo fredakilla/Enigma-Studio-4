@@ -28,7 +28,7 @@ LIBS += callfunc.obj
 # user paths
 #--------------------------------------------------------------------
 
-win32: MYLIBS = C:/dev
+win32: MYLIBS = C:/github
 unix:!macx: MYLIBS = /home/fred/libraries
 
 #--------------------------------------------------------------------
@@ -140,7 +140,12 @@ win32: DEFINES +=   _HAS_ITERATOR_DEBUGGING=1 \
 
 INCLUDEPATH += $${MYLIBS}/bgfx/include
 INCLUDEPATH += $${MYLIBS}/bx/include
+INCLUDEPATH += $${MYLIBS}/bx/include/compat/msvc    # fix <alloca.h> include error
+INCLUDEPATH += $${MYLIBS}/bgfx/tools/shaderc        # include shaderc as lib for runtime compile
+
+
 INCLUDEPATH += $${ESHARED}
+
 
 
 #--------------------------------------------------------------------
@@ -151,6 +156,7 @@ CONFIG(debug,debug|release) {
 #message( debug )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxDebug
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbxDebug
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lshadercDebug
 } else {
 #message( release )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxRelease
@@ -320,17 +326,16 @@ SOURCES += \
 
 
 
-CONFIG += RENDERER_D3D11
-RENDERER_D3D11 {
-    message(d3d11)
-    HEADERS += $${ESHARED}/engine/graphicsdx11.hpp
-    SOURCES += $${ESHARED}/engine/graphicsdx11.cpp
-} else {
+#CONFIG += RENDERER_D3D11
+#RENDERER_D3D11 {
+#    message(d3d11)
+#    HEADERS += $${ESHARED}/engine/graphicsdx11.hpp
+#    SOURCES += $${ESHARED}/engine/graphicsdx11.cpp
+#} else {
     message(bgfx)
-    QMAKE_CLEAN += $$DESTDIR/$$TARGET
     HEADERS += $${ESHARED}/engine/graphicsbgfx.hpp
     SOURCES += $${ESHARED}/engine/graphicsbgfx.cpp
-}
+#}
 
 
 
