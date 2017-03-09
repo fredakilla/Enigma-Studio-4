@@ -171,6 +171,10 @@ win32:LIBS += opengl32.lib glu32.lib winmm.lib dsound.lib dxgi.lib d3d11.lib d3d
 # project files
 #--------------------------------------------------------------------
 
+
+
+
+
 HEADERS += \
     $${ESHARED}/opstacking/modules/tinylsys3/attractor.hpp \
     $${ESHARED}/opstacking/modules/tinylsys3/kdtree.hpp \
@@ -186,7 +190,7 @@ HEADERS += \
     $${ESHARED}/engine/engine.hpp \
     $${ESHARED}/engine/font.hpp \
     $${ESHARED}/engine/graphics.hpp \
-    $${ESHARED}/engine/graphicsdx11.hpp \
+    #$${ESHARED}/engine/graphicsdx11.hpp \
     $${ESHARED}/engine/irenderable.hpp \
     $${ESHARED}/engine/light.hpp \
     $${ESHARED}/engine/material.hpp \
@@ -251,7 +255,7 @@ SOURCES += \
     $${ESHARED}/engine/demo.cpp \
     $${ESHARED}/engine/engine.cpp \
     $${ESHARED}/engine/font.cpp \
-    $${ESHARED}/engine/graphicsdx11.cpp \
+    #$${ESHARED}/engine/graphicsdx11.cpp \
     $${ESHARED}/engine/culler.cpp \
     $${ESHARED}/engine/editmesh.cpp \
     $${ESHARED}/engine/effect.cpp \
@@ -316,9 +320,17 @@ SOURCES += \
 
 
 
-
-
-
+CONFIG += RENDERER_D3D11
+RENDERER_D3D11 {
+    message(d3d11)
+    HEADERS += $${ESHARED}/engine/graphicsdx11.hpp
+    SOURCES += $${ESHARED}/engine/graphicsdx11.cpp
+} else {
+    message(bgfx)
+    QMAKE_CLEAN += $$DESTDIR/$$TARGET
+    HEADERS += $${ESHARED}/engine/graphicsbgfx.hpp
+    SOURCES += $${ESHARED}/engine/graphicsbgfx.cpp
+}
 
 
 
