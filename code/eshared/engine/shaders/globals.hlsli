@@ -44,6 +44,8 @@ cbuffer Camera : register(eCBI_CAMERA)
     float4x4	c_itViewMtx;
     float3      c_camWorldPos;
 	float4		c_camClearColor;
+
+    float4x4    u_modelViewProj;
 };
 
 cbuffer Light : register(eCBI_LIGHT)

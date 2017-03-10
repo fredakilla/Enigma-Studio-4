@@ -483,9 +483,9 @@ void eGraphicsDx11::endFrame()
     if (!m_frameNum)
         m_startPull = eTRUE;
 
-    if (m_startPull)
-        while (m_devCtx->GetData(m_occlQuery[m_frameNum], nullptr, 0, 0) == S_FALSE)
-            Sleep(1);
+    //@@if (m_startPull)
+    //@@    while (m_devCtx->GetData(m_occlQuery[m_frameNum], nullptr, 0, 0) == S_FALSE)
+    //@@        Sleep(1);
 }
 
 #ifdef eDEBUG
@@ -663,6 +663,32 @@ eGeometry * eGraphicsDx11::addGeometry(eInt flags, eVertexType vtxType, eGeoPrim
     geo->ib = nullptr;
     geo->vb = nullptr;
 
+
+    //-- BGFX
+
+    switch(vtxType)
+    {
+    case eVTX_SIMPLE:
+        geo->vertexDecl
+                .begin()
+                .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float, true)
+                .end();
+        break;
+
+    default:
+        // bgfx vertex declaration not implemented
+        eASSERT(0);
+    }
+
+
+    // svbh is union
+    //geo->vb->svbh = BGFX_INVALID_HANDLE;
+
+
+    //-- BGFX
+
+
 //	if (!geo->dynamic)
 //		g_numAddsStaticGeo++;
 
@@ -705,6 +731,64 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
     const eU32 reqVbSize = vertexCount*geo->vtxSize;
     const eU32 reqIbSize = indexCount*geo->idxSize;
     D3D11_MAPPED_SUBRESOURCE msr;
+
+
+
+    // BGFX --
+
+    if (geo->dynamic)
+    {
+        if(!geo->vb)// && !bgfx::isValid(geo->vb->dvbh))
+        {
+            geo->vb = new eGeoBufferDx11();
+            eU32 size = geo->vertexDecl.getSize(vertexCount);
+            geo->vb->ramBuff = new eU8[size];
+
+            eU16 flags = BGFX_BUFFER_NONE;
+            geo->vb->dvbh = bgfx::createDynamicVertexBuffer(vertexCount, geo->vertexDecl, flags);
+
+
+        }
+
+        eASSERT(bgfx::isValid(geo->vb->dvbh));
+
+        eU32 size = geo->vertexDecl.getSize(vertexCount);
+        const bgfx::Memory* mem = bgfx::makeRef(geo->vb->ramBuff, size);
+        bgfx::updateDynamicVertexBuffer(geo->vb->dvbh, 0, mem);
+
+        *vertices = /*(eU8 *)*/geo->vb->ramBuff;
+        //vertices = (ePtr*)geo->vb->ramBuff;
+
+
+        if (geo->indexed)
+        {
+            if(!geo->ib)
+            {
+                geo->ib = new eGeoBufferDx11();
+                eU32 size = indexCount * geo->idxSize;
+                geo->ib->ramBuff = new eU8[size];
+
+                eU16 flags = BGFX_BUFFER_NONE;
+                flags = geo->idxSize == 2 ? BGFX_BUFFER_NONE : BGFX_BUFFER_INDEX32;
+                geo->ib->dibh = bgfx::createDynamicIndexBuffer(indexCount, flags);
+            }
+
+            eASSERT(bgfx::isValid(geo->ib->dibh));
+
+            eU32 size = indexCount * geo->idxSize;
+            const bgfx::Memory* mem = bgfx::makeRef(geo->ib->ramBuff, size);
+            bgfx::updateDynamicIndexBuffer(geo->ib->dibh, 0, mem);
+
+            *indices = geo->ib->ramBuff;
+        }
+    }
+
+    return;
+
+
+    // BGFX --
+
+
 
     if (geo->dynamic) // is dynamic geometry?
     {
@@ -811,43 +895,59 @@ void eGraphicsDx11::endLoadGeometry(eGeometry *geo, eInt vertexCount, eInt index
     {
         eASSERT(geo->ib);
 
-        if (geo->dynamic)
-            m_devCtx->Unmap(geo->ib->d3dBuf, 0);
-        else
-        {
-            D3D11_BOX box;
-            eMemSet(&box, 0, sizeof(D3D11_BOX));
-            box.left = geo->ib->pos;
-            box.right = geo->ib->pos+geo->usedIndices*geo->idxSize;
-            box.back = 1;
-            box.bottom = 1;
-            m_devCtx->UpdateSubresource(geo->ib->d3dBuf, 0, &box, &m_geoMapData[1][0], 0, 0);
-        }
-
-        geo->ib->pos += geo->usedIndices*geo->idxSize;
+        //@@if (geo->dynamic)
+        //@@    m_devCtx->Unmap(geo->ib->d3dBuf, 0);
+        //@@else
+        //@@{
+        //@@    D3D11_BOX box;
+        //@@    eMemSet(&box, 0, sizeof(D3D11_BOX));
+        //@@    box.left = geo->ib->pos;
+        //@@    box.right = geo->ib->pos+geo->usedIndices*geo->idxSize;
+        //@@    box.back = 1;
+        //@@    box.bottom = 1;
+        //@@    m_devCtx->UpdateSubresource(geo->ib->d3dBuf, 0, &box, &m_geoMapData[1][0], 0, 0);
+        //@@}
+        //@@
+        //@@geo->ib->pos += geo->usedIndices*geo->idxSize;
     }
 
     // unlock vertex buffer
     eASSERT(geo->vb);
 
-    if (geo->dynamic)
-        m_devCtx->Unmap(geo->vb->d3dBuf, 0);
-    else
-    {
-        D3D11_BOX box;
-        eMemSet(&box, 0, sizeof(D3D11_BOX));
-        box.left = geo->vb->pos;
-        box.right = geo->vb->pos+geo->usedVerts*geo->vtxSize;
-        box.back = 1;
-        box.bottom = 1;
-        m_devCtx->UpdateSubresource(geo->vb->d3dBuf, 0, &box, &m_geoMapData[0][0], 0, 0);
-    }
-
-    geo->vb->pos += geo->usedVerts*geo->vtxSize;
+    //@@if (geo->dynamic)
+    //@@    m_devCtx->Unmap(geo->vb->d3dBuf, 0);
+    //@@else
+    //@@{
+    //@@    D3D11_BOX box;
+    //@@    eMemSet(&box, 0, sizeof(D3D11_BOX));
+    //@@    box.left = geo->vb->pos;
+    //@@    box.right = geo->vb->pos+geo->usedVerts*geo->vtxSize;
+    //@@    box.back = 1;
+    //@@    box.bottom = 1;
+    //@@    m_devCtx->UpdateSubresource(geo->vb->d3dBuf, 0, &box, &m_geoMapData[0][0], 0, 0);
+    //@@}
+    //@@
+    //@@geo->vb->pos += geo->usedVerts*geo->vtxSize;
 }
 
 void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts)
 {
+    // dynamic buffer has to be filled from callback?
+    if (geo->dynamic && geo->fillCb)
+        geo->fillCb(geo, geo->fcParam);
+
+    eASSERT(!geo->loading);
+
+    // is there anything to render?
+    if (!geo->usedVerts)
+        return;
+
+
+    return;
+
+    //-------------------------
+
+
     // dynamic buffer has to be filled from callback?
     if (geo->dynamic && geo->fillCb)
         geo->fillCb(geo, geo->fcParam);
