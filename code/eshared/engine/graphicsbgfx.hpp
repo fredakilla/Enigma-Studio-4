@@ -15,6 +15,8 @@
 #ifndef GRAPHICS_DX11_HPP
 #define GRAPHICS_DX11_HPP
 
+#include <bgfx/bgfx.h>
+
 struct ID3D11Device;
 struct ID3D11Buffer;
 struct ID3D11UnorderedAccessView;
@@ -145,6 +147,7 @@ struct eIShaderDx11
         ID3D11GeometryShader *  d3dGs;
         ID3D11ComputeShader *   d3dCs;
     };
+    bgfx::ShaderHandle handle;
 };
 
 struct eGeometryDx11

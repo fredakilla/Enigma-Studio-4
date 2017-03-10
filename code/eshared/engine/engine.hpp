@@ -16,7 +16,8 @@
 #define ENGINE_HPP
 
 #include "graphics.hpp"
-#include "graphicsdx11.hpp"
+//#include "graphicsdx11.hpp"
+#include "graphicsbgfx.hpp"
 
 extern eGraphics * eGfx;
 

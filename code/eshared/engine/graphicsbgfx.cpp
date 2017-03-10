@@ -16,7 +16,6 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 #include <shaderc.h>
@@ -160,6 +159,45 @@ public:
 
 static eShaderIncludeHandler m_ShaderIncludeHandler;
 #endif
+
+
+
+bgfx::ProgramHandle loadBGFXProgram(const eChar * _vsName, const eChar * _fsName)
+{
+    eU32 vsSize = 0;
+    eU32 fsSize = 0;
+
+    eBool success;
+    eByteArray vs = eFile::readAll(_vsName, &success);
+    eASSERT(success);
+    eByteArray fs = eFile::readAll(_fsName, &success);
+    eASSERT(success);
+
+    vsSize = vs.size();
+    fsSize = fs.size();
+
+    const bgfx::Memory* memvs = bgfx::alloc(vsSize + 1);
+    const bgfx::Memory* memfs = bgfx::alloc(fsSize + 1);
+
+    eMemCopy((void *)memvs->data, (void *)&vs[0], vsSize);
+    eMemCopy((void *)memfs->data, (void *)&fs[0], fsSize);
+
+    memvs->data[memvs->size - 1] = '\0';
+    memfs->data[memfs->size - 1] = '\0';
+
+    bgfx::ShaderHandle vsh = bgfx::createShader(memvs);
+    eASSERT(isValid(vsh));
+
+    bgfx::ShaderHandle fsh = bgfx::createShader(memfs);
+    eASSERT(isValid(fsh));
+
+    bgfx::ProgramHandle pgh = bgfx::createProgram(vsh,fsh,true);
+    eASSERT(isValid(pgh));
+
+    return pgh;
+}
+
+
 
 eGraphicsDx11::eGraphicsDx11() :
     m_dxgiFactory(nullptr),
@@ -1501,15 +1539,15 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
 
     // test runtime compiling bgfx shader
 
-    int argc = 13;
+    /*int argc = 13;
     const char* argv[16];
 
     argv[0] = "-f";
-    argv[1] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.hlsl";
+    argv[1] = "C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.hlsl";
     argv[2] = "-o";
-    argv[3] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.bin";
+    argv[3] = "C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.bin";
     argv[4] = "--varyingdef";
-    argv[5] = "C:/github/Enigma-Studio-4/code/eshared/engine/shaders/varying.def.sc";
+    argv[5] = "C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/varying.def.sc";
     argv[6] = "--type";
     argv[7] = "v";
     argv[8] = "--platform";
@@ -1530,7 +1568,7 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
 
     //FullVertexFormat::init();
     //g_programHandle = loadBGFXProgram("C:/github/Enigma-Studio-4/binary/shaders/vs.bin", "C:/github/Enigma-Studio-4/binary/shaders/fs.bin");
-
+    */
 
 
 
@@ -2143,9 +2181,73 @@ void eGraphicsDx11::_compileShader(const eChar *src, const eChar *define, const 
     eMemCopy(&data[0], binary->GetBufferPointer(), binary->GetBufferSize());
 }
 
-void eGraphicsDx11::_loadShader(const eChar *src, const eChar *define, eIShaderDx11 *shader)
+
+
+void eGraphicsDx11::_loadShader(const eChar* src, const eChar *define, eIShaderDx11 *shader)
 {
+    std::string fullname(src);
+    eString rawname = fullname.substr(0, fullname.find_last_of(".")).c_str();
+    eString path = fullname.substr(0, fullname.find_last_of("\\/")).c_str();
+
+    eString binFile(rawname + ".bin");
+    eString varyingDefFile(path + "/varying.def.sc");
+
+    // use shaderc to generate bgfx shader bin file
+
+    // shaderc --type : Shader type (v = vertex, f = fragment)
+    static const eChar ST[9][2] = {"", "f", "v", "", "g", "", "", "", "c"};
+
+    // shaderc --profile : Shader model (f.e. ps_3_0)
     static const eChar SM[9][7] = {"", "ps_5_0", "vs_5_0", "", "gs_5_0", "", "", "", "cs_5_0"};
+
+    int argc = 13;
+    const char* argv[16];
+
+    argv[0] = "-f";
+    argv[1] = src; //"C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.hlsl";
+    argv[2] = "-o";
+    argv[3] = binFile; //"C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/vs_quad.bin";
+    argv[4] = "--varyingdef";
+    argv[5] = varyingDefFile; //"C:/dev/Enigma-Studio-4/code/eshared/engine/shaders/varying.def.sc";
+    argv[6] = "--type";
+    argv[7] = ST[shader->type]; //"v";
+    argv[8] = "--platform";
+    argv[9] = "windows";
+    argv[10] = "--profile";
+    argv[11] = SM[shader->type]; //"vs_5_0";
+    argv[12] = "--raw";
+
+    eChar outputText[2048];
+    eU16 outputSize;    
+
+    eInt ret = bgfx::compileShader(argc, argv);
+    bgfx::getShaderError(outputText, outputSize);
+
+    if(ret)
+        ePRINT(outputText);
+
+
+    // create bgfx shader from .bin
+
+    eBool success;
+    eByteArray shaderCode = eFile::readAll(binFile, &success);
+    eASSERT(success);
+
+    eU32 size = shaderCode.size();
+    const bgfx::Memory* mem = bgfx::alloc(size + 1);
+    eMemCopy((void *)mem->data, (void *)&shaderCode[0], size);
+    mem->data[mem->size - 1] = '\0';
+
+    shader->handle = bgfx::createShader(mem);
+    eASSERT(bgfx::isValid(shader->handle));
+
+
+
+
+    //--------------------------------
+
+
+    //@@static const eChar SM[9][7] = {"", "ps_5_0", "vs_5_0", "", "gs_5_0", "", "", "", "cs_5_0"};
     eByteArray data;
 
     _compileShader(src, define, SM[shader->type], data);    

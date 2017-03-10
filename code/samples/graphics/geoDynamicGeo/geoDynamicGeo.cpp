@@ -91,10 +91,10 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
     // Init
 
-    eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST, _fillGeoBuffers, &timer);
-
-    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
     eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
+    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
+
+    eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST, _fillGeoBuffers, &timer);
 
     eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
 
