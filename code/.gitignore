@@ -1,6 +1,7 @@
 *.sdf
 *.opensdf
 *.suo
+*.bin
 
 debug/
 release/
@@ -15,4 +16,7 @@ estudio4/gui/moc_*.cpp
 estudio4/gui/ui_*.h
 estudio4/resources/qrc_*.cpp
 
-enigma4.pro.user
+*.pro.user
+*build-*MSVC*-Debug*
+*build-*MSVC*-Release*
+
