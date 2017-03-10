@@ -871,3 +871,20 @@ eBool eClosedIntervalsOverlap(eInt start0, eInt end0, eInt start1, eInt end1)
     return (start1 <= end0 && start0 <= end1);
 }
 
+//---------------------------------------------------------------------------------------------
+// print short text using std::cout using printf style
+// use this print function to redirect text to log editor
+//---------------------------------------------------------------------------------------------
+eChar* ePrintMsg(const eChar *fmt, ...)
+{
+    static eChar buffer[255] = "";
+
+    va_list argptr;
+    va_start(argptr,fmt);
+    vsprintf(buffer, fmt, argptr);
+    va_end(argptr);
+
+    eWriteToLog(buffer);
+
+    return buffer;
+}

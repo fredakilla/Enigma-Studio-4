@@ -38,6 +38,9 @@
 #define eELEMENT_COUNT(a)    (sizeof(a)/sizeof(a[0]))
 #define eASSERT_ALIGNED16(x) eASSERT(eU32(x)%16 == 0)
 
+eChar* ePrintMsg(const eChar *fmt, ...);
+#define ePRINT(...) ePrintMsg(__VA_ARGS__)
+
 inline void eDebugBreak() { __debugbreak(); }
 
 #ifdef eDEBUG
