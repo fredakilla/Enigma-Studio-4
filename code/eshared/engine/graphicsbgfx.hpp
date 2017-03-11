@@ -66,6 +66,7 @@ typedef struct eIShaderDx11 ePixelShaderDx11;
 typedef struct eIShaderDx11 eVertexShaderDx11;
 typedef struct eIShaderDx11 eGeometryShaderDx11;
 typedef struct eIShaderDx11 eComputeShaderDx11;
+typedef struct eIProgramBgfx eProgramBgfx;
 
 // callback to fill dynamic geometry buffers
 typedef void (* eGeoFillCallback)(struct eGeometryDx11 *geo, ePtr param);
@@ -161,6 +162,16 @@ struct eIShaderDx11
         ID3D11ComputeShader *   d3dCs;
     };
     bgfx::ShaderHandle handle;
+};
+
+struct eIProgramBgfx
+{
+    eU32                        hash;
+#ifdef eDEBUG
+    eS64                        lastTime;
+#endif
+
+    bgfx::ProgramHandle handle;
 };
 
 struct eGeometryDx11
@@ -261,6 +272,7 @@ struct eRenderStateDx11
     eComputeShaderDx11 *        cs;
     eIConstBufferDx11 *         constBufs[eGFX_MAXCBS];
 
+    // BGFX
     eU64                        bgfxState;
 };
 #pragma pack(pop)
@@ -346,6 +358,7 @@ public:
     void                        removeUavBuffer(eUavBufferDx11 *&uav);
     void                        execComputeShader(eU32 numThreadsX, eU32 numThreadsY, eU32 numThreadsZ);
 
+    eProgramBgfx *          loadProgram(const eVertexShaderDx11 *vs, const ePixelShaderDx11 *ps);
     ePixelShaderDx11 *          loadPixelShader(const eChar *src, const eChar *define=nullptr);
     eVertexShaderDx11 *         loadVertexShader(const eChar *src, const eChar *define=nullptr);
     eGeometryShaderDx11 *       loadGeometryShader(const eChar *src, const eChar *define=nullptr);
@@ -371,6 +384,7 @@ private:
     eIShaderDx11 *              _findShader(const eChar *src, const eChar *define);
     void                        _compileShader(const eChar *src, const eChar *define, const eChar *sm, eByteArray &data) const;
     void                        _loadShader(const eChar *src, const eChar *define, eIShaderDx11 *shader);
+    eIProgramBgfx *             _findProgram(const eVertexShaderDx11* vs, const ePixelShaderDx11* ps);
 
 private:
     enum GeoBufferId
@@ -453,6 +467,10 @@ private:
     eMatrix4x4                  m_modelMtx;
     eMatrix4x4                  m_viewMtx;
     eMatrix4x4                  m_projMtx;
+
+
+    // -- BGFX
+    eArray<eIProgramBgfx*>      m_programs;
 
 	/*
 public:

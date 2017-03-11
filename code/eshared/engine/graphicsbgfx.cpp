@@ -741,7 +741,7 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
 
     // BGFX --
 
-    if (geo->dynamic)
+    if (geo->dynamic)  // is dynamic geometry?
     {
         if(!geo->vb)// && !bgfx::isValid(geo->vb->dvbh))
         {
@@ -783,6 +783,51 @@ void eGraphicsDx11::beginLoadGeometry(eGeometryDx11 *geo, eU32 vertexCount, ePtr
             eU32 size = indexCount * geo->idxSize;
             const bgfx::Memory* mem = bgfx::makeRef(geo->ib->ramBuff, size);
             bgfx::updateDynamicIndexBuffer(geo->ib->dibh, 0, mem);
+
+            *indices = geo->ib->ramBuff;
+        }
+    }
+    else // is static geometry?
+    {
+        if(!geo->vb)
+        {
+            geo->vb = new eGeoBufferDx11();
+            eU32 size = geo->vertexDecl.getSize(vertexCount);
+            geo->vb->ramBuff = new eU8[size];
+
+            //eU32 size = geo->vertexDecl.getSize(vertexCount);
+            const bgfx::Memory* mem = bgfx::makeRef(geo->vb->ramBuff, size);
+
+            eU16 flags = BGFX_BUFFER_NONE;
+            geo->vb->svbh = bgfx::createVertexBuffer(mem, geo->vertexDecl, flags);
+            eASSERT(bgfx::isValid(geo->vb->svbh));
+        }
+
+        eASSERT(bgfx::isValid(geo->vb->svbh));
+
+        //eU32 size = geo->vertexDecl.getSize(vertexCount);
+        //const bgfx::Memory* mem = bgfx::makeRef(geo->vb->ramBuff, size);
+        //bgfx::updateVertexBuffer(geo->vb->dvbh, 0, mem);
+
+        *vertices = /*(eU8 *)*/geo->vb->ramBuff;
+
+
+        if (geo->indexed)
+        {
+            if(!geo->ib)
+            {
+                geo->ib = new eGeoBufferDx11();
+                eU32 size = indexCount * geo->idxSize;
+                geo->ib->ramBuff = new eU8[size];
+
+                //eU32 size = indexCount * geo->idxSize;
+                const bgfx::Memory* mem = bgfx::makeRef(geo->ib->ramBuff, size);
+
+                eU16 flags = BGFX_BUFFER_NONE;
+                flags = geo->idxSize == 2 ? BGFX_BUFFER_NONE : BGFX_BUFFER_INDEX32;
+                geo->ib->sibh = bgfx::createIndexBuffer(mem, flags);
+                eASSERT(bgfx::isValid(geo->ib->sibh));
+            }
 
             *indices = geo->ib->ramBuff;
         }
@@ -1001,6 +1046,7 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
 
     //-- BGFX
 
+    // set buffers
     if(geo->dynamic)
     {
         bgfx::setVertexBuffer(geo->vb->dvbh);
@@ -1008,6 +1054,20 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
         if (geo->indexed)
             bgfx::setIndexBuffer(geo->ib->dibh);
     }
+    else
+    {
+        bgfx::setVertexBuffer(geo->vb->svbh);
+
+        if (geo->indexed)
+            bgfx::setIndexBuffer(geo->ib->sibh);
+    }
+
+    // load bgfx program
+    eProgramBgfx* program = loadProgram(m_rsEdit.vs, m_rsEdit.ps);
+    eASSERT(bgfx::isValid(program->handle));
+
+    // submit geometry
+    bgfx::submit(0, program->handle);
 
     //-- BGFX
 
@@ -1469,6 +1529,23 @@ void eGraphicsDx11::execComputeShader(eU32 numThreadsX, eU32 numThreadsY, eU32 n
     eASSERT(numThreadsX > 0 && numThreadsY > 0 && numThreadsZ > 0);
     _activateRenderState();
     m_devCtx->Dispatch(numThreadsX, numThreadsY, numThreadsZ);
+}
+
+
+eProgramBgfx * eGraphicsDx11::loadProgram(const eVertexShaderDx11 *vs, const ePixelShaderDx11 *ps)
+{
+    eASSERT(bgfx::isValid(vs->handle) && bgfx::isValid(ps->handle));
+
+    eProgramBgfx *program = (eProgramBgfx *)_findProgram(vs, ps);
+    if (!program)
+    {
+        program = (eProgramBgfx *)m_programs.append(new eProgramBgfx);
+        program->handle = bgfx::createProgram(vs->handle, ps->handle);
+
+        eASSERT(bgfx::isValid(program->handle));
+    }
+
+    return program;
 }
 
 ePixelShaderDx11 * eGraphicsDx11::loadPixelShader(const eChar *src, const eChar *define)
@@ -2193,14 +2270,15 @@ void eGraphicsDx11::_activateRenderState()
     }
    
     // activate shaders
-    if (m_rsActive.ps != m_rsEdit.ps)
-        m_devCtx->PSSetShader(m_rsEdit.ps ? m_rsEdit.ps->d3dPs : nullptr, nullptr, 0);
-    if (m_rsActive.vs != m_rsEdit.vs)
-        m_devCtx->VSSetShader(m_rsEdit.vs ? m_rsEdit.vs->d3dVs : nullptr, nullptr, 0);
-    if (m_rsActive.gs != m_rsEdit.gs)
-        m_devCtx->GSSetShader(m_rsEdit.gs ? m_rsEdit.gs->d3dGs : nullptr, nullptr, 0);
-    if (m_rsActive.cs != m_rsEdit.cs)
-        m_devCtx->CSSetShader(m_rsEdit.cs ? m_rsEdit.cs->d3dCs : nullptr, nullptr, 0);
+    //@@if (m_rsActive.ps != m_rsEdit.ps)
+    //@@    m_devCtx->PSSetShader(m_rsEdit.ps ? m_rsEdit.ps->d3dPs : nullptr, nullptr, 0);
+    //@@if (m_rsActive.vs != m_rsEdit.vs)
+    //@@    m_devCtx->VSSetShader(m_rsEdit.vs ? m_rsEdit.vs->d3dVs : nullptr, nullptr, 0);
+    //@@if (m_rsActive.gs != m_rsEdit.gs)
+    //@@    m_devCtx->GSSetShader(m_rsEdit.gs ? m_rsEdit.gs->d3dGs : nullptr, nullptr, 0);
+    //@@if (m_rsActive.cs != m_rsEdit.cs)
+    //@@    m_devCtx->CSSetShader(m_rsEdit.cs ? m_rsEdit.cs->d3dCs : nullptr, nullptr, 0);
+
 
     // check if textures are used as targets or
     // they other way around
@@ -2265,6 +2343,17 @@ void eGraphicsDx11::_activateRenderState()
 
     // replace active state
     m_rsActive = m_rsEdit;
+}
+
+eIProgramBgfx * eGraphicsDx11::_findProgram(const eVertexShaderDx11* vs, const ePixelShaderDx11* ps)
+{
+    const eU32 hash = vs->hash^ps->hash;
+
+    for (eU32 i=0; i<m_programs.size(); i++)
+        if (m_programs[i]->hash == hash)
+            return m_programs[i];
+
+    return nullptr;
 }
 
 eIShaderDx11 * eGraphicsDx11::_findShader(const eChar *src, const eChar *define)

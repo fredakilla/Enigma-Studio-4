@@ -28,7 +28,7 @@ LIBS += callfunc.obj
 # user paths
 #--------------------------------------------------------------------
 
-win32: MYLIBS = C:/github
+win32: MYLIBS = C:/dev
 unix:!macx: MYLIBS = /home/fred/libraries
 
 #--------------------------------------------------------------------
@@ -137,6 +137,9 @@ win32: DEFINES +=   _HAS_ITERATOR_DEBUGGING=1 \
 INCLUDEPATH += $${MYLIBS}/bgfx/include
 INCLUDEPATH += $${MYLIBS}/bx/include
 INCLUDEPATH += $${ESHARED}
+INCLUDEPATH += $${MYLIBS}/bx/include/compat/msvc    # fix <alloca.h> include error
+INCLUDEPATH += $${MYLIBS}/bgfx/tools/shaderc        # include shaderc as lib for runtime compile
+
 
 
 #--------------------------------------------------------------------
@@ -147,6 +150,7 @@ CONFIG(debug,debug|release) {
 #message( debug )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxDebug
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbxDebug
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lshadercDebug
 } else {
 #message( release )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxRelease
@@ -182,7 +186,7 @@ HEADERS += \
     $${ESHARED}/engine/engine.hpp \
     $${ESHARED}/engine/font.hpp \
     $${ESHARED}/engine/graphics.hpp \
-    $${ESHARED}/engine/graphicsdx11.hpp \
+    #$${ESHARED}/engine/graphicsdx11.hpp \
     $${ESHARED}/engine/irenderable.hpp \
     $${ESHARED}/engine/light.hpp \
     $${ESHARED}/engine/material.hpp \
@@ -247,7 +251,7 @@ SOURCES += \
     $${ESHARED}/engine/demo.cpp \
     $${ESHARED}/engine/engine.cpp \
     $${ESHARED}/engine/font.cpp \
-    $${ESHARED}/engine/graphicsdx11.cpp \
+    #$${ESHARED}/engine/graphicsdx11.cpp \
     $${ESHARED}/engine/culler.cpp \
     $${ESHARED}/engine/editmesh.cpp \
     $${ESHARED}/engine/effect.cpp \
@@ -313,7 +317,8 @@ SOURCES += \
 
 
 
-
+HEADERS += $${ESHARED}/engine/graphicsbgfx.hpp
+SOURCES += $${ESHARED}/engine/graphicsbgfx.cpp
 
 
 

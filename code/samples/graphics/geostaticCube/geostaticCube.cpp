@@ -72,8 +72,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     eGfx->endLoadGeometry(m_geo);
 
 
-    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
-    eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
+    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad2));
+    eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad2));
 
     eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
 

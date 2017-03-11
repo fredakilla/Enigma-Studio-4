@@ -209,7 +209,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                            | BGFX_STATE_PT_TRISTRIP
                            );*/
 
-            bgfx::submit(0, pgm);
+            //bgfx::submit(0, pgm);
 
 
 
