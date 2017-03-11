@@ -260,6 +260,8 @@ struct eRenderStateDx11
     eGeometryShaderDx11 *       gs;
     eComputeShaderDx11 *        cs;
     eIConstBufferDx11 *         constBufs[eGFX_MAXCBS];
+
+    eU64                        bgfxState;
 };
 #pragma pack(pop)
 

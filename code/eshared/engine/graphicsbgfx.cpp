@@ -31,6 +31,8 @@ static void eCallDx(const HRESULT res)
         eShowError(eIntToStr(res));
 }
 
+
+
 eTexture2d * eGraphicsDx11::TARGET_SCREEN = (eTexture2d *)0xdeadbeef;
 
 static const struct TextureFormat
@@ -636,6 +638,9 @@ eRenderStateDx11 & eGraphicsDx11::freshRenderState()
     m_rsEdit.viewport.setWidth(m_wndWidth);
     m_rsEdit.viewport.setHeight(m_wndHeight);
 
+    // BGFX default state
+    m_rsEdit.bgfxState = BGFX_STATE_DEFAULT;
+
     return m_rsEdit;
 }
 
@@ -942,23 +947,7 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     if (!geo->usedVerts)
         return;
 
-
-    return;
-
-    //-------------------------
-
-
-    // dynamic buffer has to be filled from callback?
-    if (geo->dynamic && geo->fillCb)
-        geo->fillCb(geo, geo->fcParam);
-
-    eASSERT(!geo->loading);
-
-    // is there anything to render?
-    if (!geo->usedVerts)
-        return;
-
-    D3D11_PRIMITIVE_TOPOLOGY topology;
+    //@@D3D11_PRIMITIVE_TOPOLOGY topology;
     const eU32 numObjs = (insts.isEmpty() ? 1 : insts.size());
     eU32 triCount = 0;
     eU32 lineCount = 0;
@@ -966,29 +955,32 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     switch (geo->primType)
     {
     case eGPT_TRILIST:
-        topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        //@@topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         triCount = geo->usedVerts/3;
+        // note: TRILIST is default topology in bgfx (don't need to set special render state here)
         break;
 
     case eGPT_QUADLIST:
-        topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        //@@topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         triCount = geo->usedVerts/4*2;
         eASSERT(!geo->indexed);
         break;
 
     case eGPT_LINELIST:
-        topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+        //@@topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
         lineCount = geo->usedVerts/2;
         break;
 
     case eGPT_TRISTRIPS:
-        topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        //@@topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
         triCount = geo->usedVerts-2;
+        m_rsEdit.bgfxState |= BGFX_STATE_PT_TRISTRIP;
         break;
 
     case eGPT_LINESTRIPS:
-        topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+        //@@topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
         lineCount = geo->usedVerts-1;
+        m_rsEdit.bgfxState |= BGFX_STATE_PT_LINESTRIP;
         break;
     }
 
@@ -1003,9 +995,22 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     // activate render state and set input data
     _activateRenderState();
 
-    m_devCtx->IASetPrimitiveTopology(topology);
-    m_devCtx->IASetInputLayout(m_inputLayouts[geo->vtxType]);
-    m_devCtx->IASetVertexBuffers(0, 1, &geo->vb->d3dBuf, &eVERTEX_SIZES[geo->vtxType], &geo->vbPos);
+    //@@m_devCtx->IASetPrimitiveTopology(topology);
+    //@@m_devCtx->IASetInputLayout(m_inputLayouts[geo->vtxType]);
+    //@@m_devCtx->IASetVertexBuffers(0, 1, &geo->vb->d3dBuf, &eVERTEX_SIZES[geo->vtxType], &geo->vbPos);
+
+    //-- BGFX
+
+    if(geo->dynamic)
+    {
+        bgfx::setVertexBuffer(geo->vb->dvbh);
+
+        if (geo->indexed)
+            bgfx::setIndexBuffer(geo->ib->dibh);
+    }
+
+    //-- BGFX
+
 
     // fill instance buffer
     if (insts.size() > 0)
@@ -1019,45 +1024,45 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
         if (nextInstVbPos >= m_geoBufs[GBID_VB_INST]->size)
         {
             m_geoBufs[GBID_VB_INST]->pos = 0;
-            m_devCtx->Map(m_geoBufs[GBID_VB_INST]->d3dBuf, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+            //@@m_devCtx->Map(m_geoBufs[GBID_VB_INST]->d3dBuf, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
         }
         else
             m_devCtx->Map(m_geoBufs[GBID_VB_INST]->d3dBuf, 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &msr);
 
         eMemCopy((eU8 *)msr.pData+m_geoBufs[GBID_VB_INST]->pos, &insts[0], bufSize);
-        m_devCtx->Unmap(m_geoBufs[GBID_VB_INST]->d3dBuf, 0);
-        m_devCtx->IASetVertexBuffers(1, 1, &m_geoBufs[GBID_VB_INST]->d3dBuf, &eVERTEX_SIZES[eVTX_INSTANCE], &m_geoBufs[GBID_VB_INST]->pos);
+        //@@m_devCtx->Unmap(m_geoBufs[GBID_VB_INST]->d3dBuf, 0);
+        //@@m_devCtx->IASetVertexBuffers(1, 1, &m_geoBufs[GBID_VB_INST]->d3dBuf, &eVERTEX_SIZES[eVTX_INSTANCE], &m_geoBufs[GBID_VB_INST]->pos);
         m_geoBufs[GBID_VB_INST]->pos += bufSize;
     }
 
     // render geometry
     if (geo->primType == eGPT_QUADLIST)
     {
-        m_devCtx->IASetIndexBuffer(m_geoBufs[GBID_IB_QUAD]->d3dBuf, DXGI_FORMAT_R16_UINT, 0);
+        //@@m_devCtx->IASetIndexBuffer(m_geoBufs[GBID_IB_QUAD]->d3dBuf, DXGI_FORMAT_R16_UINT, 0);
         const eU32 numIndices = triCount*3;
 
-        if (insts.size())
-            m_devCtx->DrawIndexedInstanced(numIndices, insts.size(), 0, 0, 0);
-        else
-            m_devCtx->DrawIndexed(numIndices, 0, 0);
+        //@@if (insts.size())
+        //@@    @@m_devCtx->DrawIndexedInstanced(numIndices, insts.size(), 0, 0, 0);
+        //@@else
+        //@@    m_devCtx->DrawIndexed(numIndices, 0, 0);
     }
     else if (geo->indexed)
     {
-        m_devCtx->IASetIndexBuffer(geo->ib->d3dBuf, (geo->idxSize == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT), geo->ibPos);
+        //@@m_devCtx->IASetIndexBuffer(geo->ib->d3dBuf, (geo->idxSize == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT), geo->ibPos);
 
-        if (insts.size())
-            m_devCtx->DrawIndexedInstanced(geo->usedIndices, insts.size(), 0, 0, 0);
-        else
-            m_devCtx->DrawIndexed(geo->usedIndices, 0, 0);
+        //@@if (insts.size())
+        //@@    m_devCtx->DrawIndexedInstanced(geo->usedIndices, insts.size(), 0, 0, 0);
+        //@@else
+        //@@    m_devCtx->DrawIndexed(geo->usedIndices, 0, 0);
     }
     else
     {
-        m_devCtx->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
-
-        if (insts.size())
-            m_devCtx->DrawInstanced(geo->usedVerts, insts.size(), 0, 0);
-        else
-            m_devCtx->Draw(geo->usedVerts, 0);
+        //@@m_devCtx->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+        //@@
+        //@@if (insts.size())
+        //@@    m_devCtx->DrawInstanced(geo->usedVerts, insts.size(), 0, 0);
+        //@@else
+        //@@    m_devCtx->Draw(geo->usedVerts, 0);
     }
 }
 
@@ -1635,6 +1640,7 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
     bgfx::init();
     bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
+    bgfx::setViewRect(0, 0, 0, m_wndWidth, m_wndHeight);
 
 
     // test runtime compiling bgfx shader
@@ -1986,6 +1992,8 @@ void eGraphicsDx11::_activateRenderState()
 
     eU32 i;
 
+    eU64 bgfxState = 0;
+
     // activate depth stencil state
     if (m_rsActive.depthHash != m_rsEdit.depthHash)
     {
@@ -2009,7 +2017,7 @@ void eGraphicsDx11::_activateRenderState()
             eStateInfoDx11 &si = m_depthStates.append();
             si.rs = m_rsEdit;
             si.hash = m_rsEdit.depthHash;
-            eCallDx(m_dev->CreateDepthStencilState(&desc, &si.d3dDss));
+            //@@eCallDx(m_dev->CreateDepthStencilState(&desc, &si.d3dDss));
             i = m_depthStates.size()-1;
         }
 
@@ -2039,6 +2047,10 @@ void eGraphicsDx11::_activateRenderState()
             si.rs = m_rsEdit;
             eCallDx(m_dev->CreateBlendState(&desc, &si.d3dBs));
             i = m_blendStates.size()-1;
+
+
+            // bgfx
+            bgfxState = m_rsEdit.colorWrite ? BGFX_STATE_RGB_WRITE : 0;
         }
 
         const eF32 blendFactor[] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -2127,6 +2139,20 @@ void eGraphicsDx11::_activateRenderState()
             si.rs = m_rsEdit;
             eCallDx(m_dev->CreateRasterizerState(&desc, &si.d3dRs));
             i = m_rasterStates.size()-1;
+
+
+            // BGFX
+            switch(m_rsEdit.cullMode)
+            {
+            case eCULL_FRONT:
+                m_rsEdit.bgfxState |= BGFX_STATE_CULL_CW;
+                break;
+
+            case eCULL_BACK:
+                m_rsEdit.bgfxState |= BGFX_STATE_CULL_CCW;
+                break;
+            }
+            // BGFX
         }
 
         m_devCtx->RSSetState(m_rasterStates[i].d3dRs);
@@ -2161,6 +2187,9 @@ void eGraphicsDx11::_activateRenderState()
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         m_devCtx->RSSetViewports(1, &viewport);
+
+
+        bgfx::setViewRect(0, vp.left, vp.top, vp.getWidth(), vp.getHeight() );
     }
    
     // activate shaders
@@ -2217,6 +2246,22 @@ void eGraphicsDx11::_activateRenderState()
         _activateUavBuffers();
         _activateTargets();
     }
+
+
+    // BGFX states
+
+    //if(m_rsActive.bgfxState != m_rsEdit.bgfxState)
+    {
+        bgfx::setState( bgfxState
+                       | BGFX_STATE_RGB_WRITE
+                       | BGFX_STATE_ALPHA_WRITE
+                       | BGFX_STATE_DEPTH_TEST_LESS
+                       | BGFX_STATE_DEPTH_WRITE
+                       | BGFX_STATE_CULL_CW
+                       | BGFX_STATE_MSAA
+                       );
+    }
+
 
     // replace active state
     m_rsActive = m_rsEdit;

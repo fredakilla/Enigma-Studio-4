@@ -47,18 +47,21 @@ eCamera::eCamera(eF32 left, eF32 right, eF32 top, eF32 bottom, eF32 zNear, eF32 
 
 void eCamera::activate(const eMatrix4x4 &modelMtx) const
 {
-    static eConstBufferDx11<ShaderConsts, eST_VS> cb;
-    cb.data.viewMtx = m_viewMtx;
-    cb.data.projMtx = m_projMtx;
-    cb.data.mvpMtx = modelMtx*m_viewMtx*m_projMtx;
-    cb.data.itViewMtx = m_itViewMtx;
-    cb.data.camWorldPos = getWorldPos();
-    cb.data.clearCol = m_clearCol;
-
-    eRenderState &rs = eGfx->getRenderState();
-    rs.constBufs[eCBI_CAMERA] = &cb;
+    //@@static eConstBufferDx11<ShaderConsts, eST_VS> cb;
+    //@@cb.data.viewMtx = m_viewMtx;
+    //@@cb.data.projMtx = m_projMtx;
+    //@@cb.data.mvpMtx = modelMtx*m_viewMtx*m_projMtx;
+    //@@cb.data.itViewMtx = m_itViewMtx;
+    //@@cb.data.camWorldPos = getWorldPos();
+    //@@cb.data.clearCol = m_clearCol;
+    //@@
+    //@@eRenderState &rs = eGfx->getRenderState();
+    //@@rs.constBufs[eCBI_CAMERA] = &cb;
 
     eGfx->setMatrices(modelMtx, m_viewMtx, m_projMtx);
+
+
+    bgfx::setViewTransform(0, m_viewMtx, m_projMtx);
 }
 
 eBool eCamera::intersectsSphere(const eVector3 &sphereCenter, eF32 sphereRadius) const

@@ -28,7 +28,7 @@ LIBS += callfunc.obj
 # user paths
 #--------------------------------------------------------------------
 
-win32: MYLIBS = C:/github
+win32: MYLIBS = C:/dev
 unix:!macx: MYLIBS = /home/fred/libraries
 
 #--------------------------------------------------------------------
