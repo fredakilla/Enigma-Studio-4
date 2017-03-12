@@ -472,6 +472,14 @@ private:
     // -- BGFX
     eArray<eIProgramBgfx*>      m_programs;
 
+    struct eUniforms
+    {
+        bgfx::UniformHandle c_mvpMtx;
+    };
+
+    eUniforms uniforms;
+
+
 	/*
 public:
 	int g_numAddsTex2d;

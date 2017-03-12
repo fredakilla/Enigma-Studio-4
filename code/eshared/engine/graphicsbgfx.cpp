@@ -982,6 +982,24 @@ void eGraphicsDx11::endLoadGeometry(eGeometry *geo, eInt vertexCount, eInt index
 
 void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts)
 {
+    // BGFX set uniforms for this draw call
+
+    eMatrix4x4 mvp = eGfx->getModelMatrix() * eGfx->getViewMatrix() * eGfx->getProjMatrix();
+
+    // Note: matrix is temporary transposed to avoid to modify vertex HLSL shader code for now.
+    // but later this command will be deleted and vertex shaders will adjusted (matrix multiplication order in shader)
+    mvp.transpose();
+
+    bgfx::setUniform(uniforms.c_mvpMtx, mvp);
+
+    //------------------------
+
+
+
+
+
+
+
     // dynamic buffer has to be filled from callback?
     if (geo->dynamic && geo->fillCb)
         geo->fillCb(geo, geo->fcParam);
@@ -1718,6 +1736,8 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
     bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
     bgfx::setViewRect(0, 0, 0, m_wndWidth, m_wndHeight);
+
+    uniforms.c_mvpMtx = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4);
 
 
     // test runtime compiling bgfx shader
