@@ -52,7 +52,6 @@ static eU16 s_cubeTriList[] =
 */
 
 
-
 static eSimpleVtx s_cubeVertices[24] =
 {
     {-1.0f,  1.0f,  1.0f,  0.0f, 0.0f },
@@ -109,10 +108,10 @@ static const eU16 s_cubeIndices[36] =
 
 
 
-
+// callback func use to fill geometry
 void _fillGeoBuffers(eGeometry *geo, ePtr param)
 {
-    eTimer* timer = (eTimer*)param;
+    const eTimer* timer = (eTimer*)param;
     const eF32 time = (eF32)timer->getElapsedMs()*0.001f;
 
     eSimpleVtx* vp = nullptr;
@@ -123,7 +122,6 @@ void _fillGeoBuffers(eGeometry *geo, ePtr param)
         //eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
         //eMemCopy(ip, &s_cubeTriStrip[0], sizeof(eU16)*14 );
          eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
-
 
         // or
 
@@ -174,29 +172,46 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     eGfx->setWindowTitle(wndTitle);
 
 
+    bool _fillWithCallBack = true;
 
 
-    // Init
+    // Init --------------------------------------------------------------------------------------------------
+
+    // create geometry
+
+    eGeometryDx11* m_geo = nullptr;
+    if(_fillWithCallBack)
+    {
+        // use callback function to fill geometry
+
+        m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST, _fillGeoBuffers, &timer);
+    }
+    else
+    {
+        // fill geometry here
+
+        m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST);
+
+        eSimpleVtx* vp = nullptr;
+        eU16* ip = nullptr;
+
+        eGfx->beginLoadGeometry(m_geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
+        {
+            eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
+            eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
+        }
+        eGfx->endLoadGeometry(m_geo);
+    }
+
+
+    // create shaders
 
     eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
     ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
 
-    eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST, _fillGeoBuffers, &timer);
-    //eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST);
 
 
-
-
-    /*eSimpleVtx* vp = nullptr;
-    eU16* ip = nullptr;
-
-    eGfx->beginLoadGeometry(m_geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
-    {
-        eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
-         eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
-    }
-    eGfx->endLoadGeometry(m_geo);*/
-
+    // create texture
 
 
 
@@ -227,7 +242,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
 
 
-    // Update
+    // Update --------------------------------------------------------------------------------------------------
 
     eMessage msg = eMSG_IDLE;
     while (msg != eMSG_QUIT)
@@ -236,13 +251,12 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
         if (msg == eMSG_IDLE)
         {
-
             const eF32 time = (eF32)timer.getElapsedMs()*0.001f;
 
             // Set view 0 default viewport.
             //bgfx::setViewRect(0, 0, 0, uint16_t(800), uint16_t(600) );
 
-
+            // begin frame
             eGfx->beginFrame();
 
             // clear
@@ -266,18 +280,15 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
             cam.setViewMatrix(mtx);
             cam.activate();
 
+            // render geo
 
             bgfx::setTexture(0, s_texColor, m_textureColor);
-
             eGfx->renderGeometry(m_geo);
 
-
-
-
+            // end frame
             eGfx->endFrame();
 
             // show fps
-
             nbFrames++;
             if ( time - lastTime >= 1.0 )
             {

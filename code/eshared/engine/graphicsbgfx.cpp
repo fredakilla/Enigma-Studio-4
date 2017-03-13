@@ -436,16 +436,17 @@ void eGraphicsDx11::clear(eInt clearMode, const eColor &col)
     //@@if (clear)
     //@@    m_devCtx->ClearDepthStencilView(m_dsvActive, clear, 1.0f, 0);
 
-    uint16_t clear = BGFX_CLEAR_NONE;
+    eU16 clearFlag = BGFX_CLEAR_NONE;
+    eU32 clearColor = col.toRgba();
 
     if (clearMode&eCM_COLOR)
-        clear |= BGFX_CLEAR_COLOR;
+        clearFlag |= BGFX_CLEAR_COLOR;
     if (clearMode&eCM_DEPTH)
-        clear |= BGFX_CLEAR_DEPTH;
+        clearFlag |= BGFX_CLEAR_DEPTH;
     if (clearMode&eCM_STENCIL)
-        clear |= BGFX_CLEAR_STENCIL;
+        clearFlag |= BGFX_CLEAR_STENCIL;
 
-    bgfx::setViewClear(0, clear, 0x223355aa, 1.0f, 0);
+    bgfx::setViewClear(0, clearFlag, clearColor, 1.0f, 0);
 }
 
 void eGraphicsDx11::beginFrame()
@@ -458,7 +459,8 @@ void eGraphicsDx11::beginFrame()
 
     bgfx::touch(0);
     bgfx::dbgTextClear();
-    bgfx::dbgTextPrintf(0, 1, 0x4f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
+    bgfx::dbgTextPrintf(0, 0, 0x0f, "BGFX Renderer : %s", bgfx::getRendererName(bgfx::getRendererType()) );
+
 }
 
 void eGraphicsDx11::endFrame()

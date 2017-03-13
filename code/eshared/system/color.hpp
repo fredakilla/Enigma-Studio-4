@@ -51,6 +51,7 @@ public:
     void        difference(const eColor &c);
     eColor      lerp(const eColor &to, eF32 t) const;
     eU32        toArgb() const;
+    eU32        toRgba() const;
 
     eColor      operator + (const eColor &c) const;
     eColor      operator - (const eColor &c) const;

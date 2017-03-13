@@ -177,6 +177,17 @@ eU32 eColor::toArgb() const // a MSB, b LSB
     return argb;
 }
 
+eU32 eColor::toRgba() const
+{
+    // 0xAABBGGRR to 0xRRGGBBAA
+    return 0
+            | ((abgr & 0xff000000) >> 24) //______AA
+            | ((abgr & 0x00ff0000) >>  8) //____BB__
+            | ((abgr & 0x0000ff00) <<  8) //__GG____
+            | ((abgr & 0x000000ff) << 24) //RR______
+            ;
+}
+
 const eU8 & eColor::operator [] (eInt index) const
 {
     eASSERT(index < 4);
