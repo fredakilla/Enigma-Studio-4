@@ -2348,6 +2348,9 @@ void eGraphicsDx11::_activateRenderState()
 
     // BGFX states
 
+    // todo:  move away
+    bgfx::setViewTransform(0, m_viewMtx, m_projMtx);
+
     //if(m_rsActive.bgfxState != m_rsEdit.bgfxState)
     {
         bgfx::setState( bgfxState
