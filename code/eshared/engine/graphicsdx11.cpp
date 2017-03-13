@@ -187,7 +187,8 @@ g_numRemsStaticGeo=0;
 */
 
     freshRenderState();
-    m_rsActive = m_rsEdit;
+    eMemSet(&m_rsActive, 0, sizeof(m_rsActive));//m_rsActive = m_rsEdit;
+
     eMemSet(m_rtvsActive, 0, sizeof(m_rtvsActive));
 
 #ifdef eEDITOR
