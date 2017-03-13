@@ -23,6 +23,89 @@
 #include "../eshared.hpp"
 
 
+
+
+
+
+
+
+// --------------------------------------------------------------------------------------------------
+
+eIMemoryBuffer::eIMemoryBuffer()
+{
+    maxLength=0;
+    length=0;
+}
+
+eIMemoryBuffer::~eIMemoryBuffer()
+{
+    destroy();
+}
+
+void eIMemoryBuffer::create(int new_length)
+{
+    destroy();
+    maxLength=new_length;
+}
+
+void eIMemoryBuffer::destroy()
+{
+    maxLength=0;
+    length=0;
+}
+
+// --------------------------------
+
+eMemoryBufferRam::eMemoryBufferRam() : eIMemoryBuffer()
+{
+    data = nullptr;
+}
+
+eMemoryBufferRam::~eMemoryBufferRam()
+{
+    destroy();
+}
+
+void eMemoryBufferRam::create(int newLength)
+{
+    eIMemoryBuffer::create(newLength);
+    data = new eU8[newLength];
+}
+
+void eMemoryBufferRam::destroy()
+{
+    eIMemoryBuffer::destroy();
+
+    if (data)
+    {
+        delete []data;
+        data = nullptr;
+    }
+}
+
+// --------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void eCallDx(const HRESULT res)
 {
     eASSERT(!FAILED(res));
@@ -52,6 +135,19 @@ TEXTURE_FORMAT_INFOS[] =
     {DXGI_FORMAT_R32G32_FLOAT,        8},
     {DXGI_FORMAT_R8_UNORM,            1}
 };
+
+bgfx::TextureFormat::Enum TEXTURE_BGFX_FORMAT_INFOS[] =
+{
+    bgfx::TextureFormat::RGBA8,
+    bgfx::TextureFormat::RGBA16,
+    bgfx::TextureFormat::RGBA16F,
+    bgfx::TextureFormat::RGBA32F,
+    bgfx::TextureFormat::R16F,
+    bgfx::TextureFormat::RG16F,
+    bgfx::TextureFormat::RG32F,
+    bgfx::TextureFormat::R8
+};
+
 
 static const struct InputLayoutInfo
 {
@@ -1221,6 +1317,24 @@ eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags
 
         eCallDx(m_dev->CreateTexture2D(&desc, nullptr, &tex->d3dTex));
         eCallDx(m_dev->CreateShaderResourceView(tex->d3dTex, nullptr, &tex->d3dSrv));
+
+        //-- BGFX
+
+        tex->textureHandle = bgfx::createTexture2D((eU16)tex->width
+                                                                  , (eU16)tex->height
+                                                                  ,(bool)false
+                                                                  ,0
+                                                                  ,TEXTURE_BGFX_FORMAT_INFOS[tex->format]
+                                                                  , BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP
+                                                                  //, mem
+                                                                  );
+
+        tex->uniformHandle = bgfx::createUniform("tex_name"//eIntToStr(tex->uniformHandle.idx)
+                                                 , bgfx::UniformType::Int1);
+
+
+        //-- BGFX
+
     }
 
 #ifdef eEDITOR
@@ -1427,16 +1541,30 @@ void eGraphicsDx11::removeTextureCube(eTextureCubeDx11 *&tex)
 
 void eGraphicsDx11::updateTexture2d(eTexture2dDx11 *tex, eConstPtr data)
 {
-    D3D11_BOX box;
-    eMemSet(&box, 0, sizeof(box));
-    box.right = tex->width;
-    box.bottom = tex->height;
-    box.back = 1;
+    //@@D3D11_BOX box;
+    //@@eMemSet(&box, 0, sizeof(box));
+    //@@box.right = tex->width;
+    //@@box.bottom = tex->height;
+    //@@box.back = 1;
+    //@@
+    //@@m_devCtx->UpdateSubresource(tex->d3dTex, 0, &box, data, tex->width*tex->pixelSize, 0);
+    //@@
+    //@@if (tex->mipmaps)
+    //@@    m_devCtx->GenerateMips(tex->d3dSrv);
 
-    m_devCtx->UpdateSubresource(tex->d3dTex, 0, &box, data, tex->width*tex->pixelSize, 0);
+    const bgfx::Memory* mem = bgfx::makeRef(data, tex->width*tex->height*sizeof(eU32));
 
-    if (tex->mipmaps)
-        m_devCtx->GenerateMips(tex->d3dSrv);
+    bgfx::updateTexture2D(tex->textureHandle
+                          , 0
+                          , 0
+                          , 0   // X offset in texture.
+                          , 0   // Y offset in texture.
+                          , tex->width  // Width of texture block.
+                          , tex->height  // Height of texture block.
+                          , mem // Texture update data.
+                          , UINT16_MAX
+                          );
+
 }
 
 void eGraphicsDx11::updateTexture2d(eTexture2dDx11 *dst, eTexture2dDx11 *src, const ePoint &dstPos, const eRect &srcRegion)
@@ -1641,15 +1769,23 @@ eTexture2d * eGraphicsDx11::createChessTexture(eU32 width, eU32 height, eU32 ste
     eASSERT(width%step == 0);
     eASSERT(height%step == 0);
 
-    const eColor colors[2] = {col0, col1};
-    eArray<eColor> data(width*height);
+    // use internal eMemoryBufferRam alloc style
+    eMemoryBufferRam* buffer = new eMemoryBufferRam();
+    buffer->create(width*height*sizeof(eU32));
+    eColor* data = (eColor*)buffer->getData();
 
+    // use bgfx mem alloc style
+    //const bgfx::Memory* mem = bgfx::alloc(width*height*sizeof(eU32));
+    //eColor* data = (eColor*)mem->data;
+
+    const eColor colors[2] = {col0, col1};
     for (eU32 y=0, index=0; y<height; y++)
         for (eU32 x=0; x<width; x++)
             data[index++] = colors[(x/step+y/step)%2];
 
-    eTexture2d *tex = addTexture2d(width, height, 0, eTFO_ARGB8);
+    eTexture2d* tex = addTexture2d(width, height, 0, eTFO_ARGB8);
     updateTexture2d(tex, &data[0]);
+
     return tex;
 }
 
@@ -2028,12 +2164,27 @@ void eGraphicsDx11::_activateTextures()
 {
     if (!eMemEqual(m_rsEdit.textures, m_rsActive.textures, sizeof(m_rsEdit.textures)))
     {
-        ID3D11ShaderResourceView *srvs[eGFX_MAXTEX];
-        for (eU32 i=0; i<eGFX_MAXTEX; i++)
-            srvs[i] = (m_rsEdit.textures[i] ? m_rsEdit.textures[i]->d3dSrv : nullptr);
+        //@@ID3D11ShaderResourceView *srvs[eGFX_MAXTEX];
+        //@@for (eU32 i=0; i<eGFX_MAXTEX; i++)
+        //@@    srvs[i] = (m_rsEdit.textures[i] ? m_rsEdit.textures[i]->d3dSrv : nullptr);
+        //@@
+        //@@m_devCtx->PSSetShaderResources(0, eGFX_MAXTEX, srvs);
+        //@@m_devCtx->CSSetShaderResources(0, eGFX_MAXTEX, srvs);
 
-        m_devCtx->PSSetShaderResources(0, eGFX_MAXTEX, srvs);
-        m_devCtx->CSSetShaderResources(0, eGFX_MAXTEX, srvs);
+        // BGFX
+        for (eU32 i=0; i<eGFX_MAXTEX; i++)
+        {
+            if(m_rsEdit.textures[i])// && bgfx::isValid(m_rsEdit.textures[i]->textureHandle))
+            {
+                eASSERT(bgfx::isValid(m_rsEdit.textures[i]->textureHandle));
+                eASSERT(bgfx::isValid(m_rsEdit.textures[i]->uniformHandle));
+
+                bgfx::setTexture(i, m_rsEdit.textures[i]->uniformHandle, m_rsEdit.textures[i]->textureHandle);
+            }
+        }
+
+
+
     }
 }
 

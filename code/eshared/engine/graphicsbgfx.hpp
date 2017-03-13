@@ -60,6 +60,58 @@ struct IDXGISwapChain;
 #endif
 #endif
 
+
+
+
+
+// ---------------------------------------------------------------------------------------
+
+class eIMemoryBuffer
+{
+    eU32 maxLength;
+    eU32 length;
+
+public:
+    eIMemoryBuffer();
+    virtual ~eIMemoryBuffer();
+
+    void setLength(int newLength)
+    {
+        if (maxLength < newLength)
+            create(newLength);
+        length = newLength;
+    }
+
+    virtual void create(int new_length);
+    virtual void destroy();
+    //virtual void* Map(int stride, MP_Device* device){return NULL;}
+    //virtual void Unmap(MP_Device* device){};
+    //virtual void Set(MAGIC_VERTEX_FORMAT* format, int stride, MP_Device* device){};
+};
+
+class eMemoryBufferRam : public eIMemoryBuffer
+{
+    eU8* data;
+
+public:
+    eMemoryBufferRam();
+    virtual ~eMemoryBufferRam();
+
+    virtual void create(int newLength);
+    virtual void destroy();
+    //virtual void* Map(int stride, MP_Device* device){return buffer;};
+
+    eU8* getData() { return data; }
+};
+
+
+// ---------------------------------------------------------------------------------------
+
+
+
+
+
+
 // every shader type is just a normal shader
 // (contains all D3D interfaces in a union)
 typedef struct eIShaderDx11 ePixelShaderDx11;
@@ -74,6 +126,19 @@ typedef void (* eGeoFillCallback)(struct eGeometryDx11 *geo, ePtr param);
 struct eITextureDx11
 {
     ID3D11ShaderResourceView *  d3dSrv;
+
+    //-- BGFX
+
+    bgfx::TextureHandle textureHandle;
+    bgfx::UniformHandle uniformHandle;
+
+    eITextureDx11()
+    {
+        textureHandle = BGFX_INVALID_HANDLE;
+        uniformHandle = BGFX_INVALID_HANDLE;
+    }
+
+    eMemoryBufferRam* memBuff;
 };
 
 struct eTexture2dDx11 : public eITextureDx11
