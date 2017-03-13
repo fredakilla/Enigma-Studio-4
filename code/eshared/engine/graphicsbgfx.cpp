@@ -2355,7 +2355,7 @@ void eGraphicsDx11::_activateRenderState()
                        | BGFX_STATE_ALPHA_WRITE
                        | BGFX_STATE_DEPTH_TEST_LESS
                        | BGFX_STATE_DEPTH_WRITE
-                       | BGFX_STATE_CULL_CW
+                       //| BGFX_STATE_CULL_CCW
                        | BGFX_STATE_MSAA
                        );
     }

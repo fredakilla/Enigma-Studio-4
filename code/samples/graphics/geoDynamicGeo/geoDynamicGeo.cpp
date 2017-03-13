@@ -2,7 +2,7 @@
 
 #include "../eshared/eshared.hpp"
 
-
+/*
 
 static eSimpleVtx s_cubeVertices[] =
 {
@@ -49,6 +49,65 @@ static eU16 s_cubeTriList[] =
     6, 3, 7,
 };
 
+*/
+
+
+
+static eSimpleVtx s_cubeVertices[24] =
+{
+    {-1.0f,  1.0f,  1.0f,  0,      0 },
+    { 1.0f,  1.0f,  1.0f,  1,      0 },
+    {-1.0f, -1.0f,  1.0f,  0, 1.0f },
+    { 1.0f, -1.0f,  1.0f,  1.0f, 1.0f },
+    {-1.0f,  1.0f, -1.0f,  0,      0 },
+    { 1.0f,  1.0f, -1.0f,  1.0f,      0 },
+    {-1.0f, -1.0f, -1.0f,  0, 1.0f },
+    { 1.0f, -1.0f, -1.0f,  1.0f, 1.0f },
+    {-1.0f,  1.0f,  1.0f,       0,      0 },
+    { 1.0f,  1.0f,  1.0f,  1.0f,      0 },
+    {-1.0f,  1.0f, -1.0f,       0, 1.0f },
+    { 1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
+    {-1.0f, -1.0f,  1.0f,       0,      0 },
+    { 1.0f, -1.0f,  1.0f,  1.0f,      0 },
+    {-1.0f, -1.0f, -1.0f,       0, 1.0f },
+    { 1.0f, -1.0f, -1.0f,  1.0f, 1.0f },
+    { 1.0f, -1.0f,  1.0f,       0,      0 },
+    { 1.0f,  1.0f,  1.0f,  1.0f,      0 },
+    { 1.0f, -1.0f, -1.0f,       0, 1.0f },
+    { 1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
+    {-1.0f, -1.0f,  1.0f,       0,      0 },
+    {-1.0f,  1.0f,  1.0f,  1.0f,      0 },
+    {-1.0f, -1.0f, -1.0f,       0, 1.0f },
+    {-1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
+};
+
+static const uint16_t s_cubeIndices[36] =
+{
+     0,  2,  1,
+     1,  2,  3,
+     4,  5,  6,
+     5,  7,  6,
+
+     8, 10,  9,
+     9, 10, 11,
+    12, 13, 14,
+    13, 15, 14,
+
+    16, 18, 17,
+    17, 18, 19,
+    20, 21, 22,
+    21, 23, 22,
+};
+
+
+
+
+
+
+
+
+
+
 
 
 void _fillGeoBuffers(eGeometry *geo, ePtr param)
@@ -59,11 +118,11 @@ void _fillGeoBuffers(eGeometry *geo, ePtr param)
     eSimpleVtx* vp = nullptr;
     eU16* ip = nullptr;
 
-    eGfx->beginLoadGeometry(geo, 8, (ePtr*)&vp, 12*3, (ePtr*)&ip);
+    eGfx->beginLoadGeometry(geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
     {
         //eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*8 );
         //eMemCopy(ip, &s_cubeTriStrip[0], sizeof(eU16)*14 );
-         eMemCopy(ip, &s_cubeTriList[0], sizeof(eU16)*12*3 );
+         eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
 
 
         // or
@@ -113,14 +172,13 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
     // Init
 
-    eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad2));
-    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad2));
-    bgfx::ProgramHandle pgm = bgfx::createProgram(m_vsQuad->handle, m_psQuad->handle);
+    eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
+    ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
 
     eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST, _fillGeoBuffers, &timer);
     //eGeometryDx11* m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST);
 
-    eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
+
 
 
     /*eSimpleVtx* vp = nullptr;
@@ -132,6 +190,44 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
         eMemCopy(ip, &s_cubeTriStrip[0], sizeof(eU16)*14 );
     }
     eGfx->endLoadGeometry(m_geo);*/
+
+
+
+
+
+    //eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
+
+    const eColor colors[2] = {eCOL_CYAN, eCOL_ORANGE};
+    eArray<eColor> data(64*64);
+
+    for (eU32 y=0, index=0; y<64; y++)
+        for (eU32 x=0; x<64; x++)
+            data[index++] = colors[(x/16+y/16)%2];
+
+    bgfx::TextureFormat::Enum TF[] = { bgfx::TextureFormat::RGBA8, bgfx::TextureFormat::RGBA16, bgfx::TextureFormat::RGBA16F,
+                                 bgfx::TextureFormat::RGBA32F, bgfx::TextureFormat::R16F, bgfx::TextureFormat::RG16F,
+                                    bgfx::TextureFormat::RG32F, bgfx::TextureFormat::R8
+                               };
+
+    enum eTextureFormat
+    {
+        eTFO_ARGB8,
+        eTFO_ARGB16,
+        eTFO_ARGB16F,
+        eTFO_DEPTH32F,
+        eTFO_R16F,
+        eTFO_R32F,
+        eTFO_GR16F,
+        eTFO_GR32F,
+        eTFO_R8,
+    };
+
+
+    const bgfx::Memory* mem = bgfx::makeRef(&data[0], 64*64*sizeof(eU32));
+
+
+    bgfx::TextureHandle m_textureColor = bgfx::createTexture2D((eU16)64, (eU16)64, (bool)false, 0, TF[eTFO_ARGB8], 0, mem );
+    bgfx::UniformHandle s_texColor = bgfx::createUniform("s_texColor", bgfx::UniformType::Int1);
 
 
 
@@ -165,7 +261,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
             rs.viewport.set(0, 0, 800, 600);
             rs.ps = m_psQuad;
             rs.vs = m_vsQuad;
-            rs.textures[0] = tex;
+            //rs.textures[0] = tex;
             rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
 
             // set viewport
@@ -176,40 +272,9 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
             cam.activate();
 
 
-
-
-            /*float at[3]  = { 0.0f, 0.0f,   0.0f };
-            float eye[3] = { 2.0f, 2.0f, -5.0f };
-            float view[16];
-            bx::mtxLookAt(view, eye, at);
-            float proj[16];
-            bx::mtxProj(proj, 60.0f, float(800)/float(600), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-            bgfx::setViewTransform(0, view, proj);*/
-
-            /*float at[3]  = { 0.0f, 0.0f,   0.0f };
-            float eye[3] = { 2.0f, 2.0f, -5.0f };
-            float view[16];
-            bx::mtxLookAt(view, eye, at);*/
-            //float proj[16];
-            //bx::mtxProj(proj, 45.0f, float(800)/float(600), 0.1f, 1000.0f, bgfx::getCaps()->homogeneousDepth);
-           // bgfx::setViewTransform(0, cam.getViewMatrix(), cam.getProjMatrix());
-
-
-
-
+            bgfx::setTexture(0, s_texColor, m_textureColor);
 
             eGfx->renderGeometry(m_geo);
-
-            //bgfx::setVertexBuffer(m_geo->vb->dvbh);
-            //bgfx::setIndexBuffer(m_geo->ib->dibh);
-
-            // Set render states.
-            /*bgfx::setState(0
-                           | BGFX_STATE_DEFAULT
-                           | BGFX_STATE_PT_TRISTRIP
-                           );*/
-
-            //bgfx::submit(0, pgm);
 
 
 
@@ -237,7 +302,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     // Clean
 
     eGfx->removeGeometry(m_geo);
-    eGfx->removeTexture2d(tex);
+    //eGfx->removeTexture2d(tex);
 
     return 0;
 }
