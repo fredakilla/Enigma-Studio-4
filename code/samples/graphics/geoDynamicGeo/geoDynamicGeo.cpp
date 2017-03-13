@@ -55,33 +55,33 @@ static eU16 s_cubeTriList[] =
 
 static eSimpleVtx s_cubeVertices[24] =
 {
-    {-1.0f,  1.0f,  1.0f,  0,      0 },
-    { 1.0f,  1.0f,  1.0f,  1,      0 },
-    {-1.0f, -1.0f,  1.0f,  0, 1.0f },
+    {-1.0f,  1.0f,  1.0f,  0.0f, 0.0f },
+    { 1.0f,  1.0f,  1.0f,  1.0f, 0.0f },
+    {-1.0f, -1.0f,  1.0f,  0.0f, 1.0f },
     { 1.0f, -1.0f,  1.0f,  1.0f, 1.0f },
-    {-1.0f,  1.0f, -1.0f,  0,      0 },
-    { 1.0f,  1.0f, -1.0f,  1.0f,      0 },
-    {-1.0f, -1.0f, -1.0f,  0, 1.0f },
+    {-1.0f,  1.0f, -1.0f,  0.0f, 0.0f },
+    { 1.0f,  1.0f, -1.0f,  1.0f, 0.0f },
+    {-1.0f, -1.0f, -1.0f,  0.0f, 1.0f },
     { 1.0f, -1.0f, -1.0f,  1.0f, 1.0f },
-    {-1.0f,  1.0f,  1.0f,       0,      0 },
-    { 1.0f,  1.0f,  1.0f,  1.0f,      0 },
-    {-1.0f,  1.0f, -1.0f,       0, 1.0f },
+    {-1.0f,  1.0f,  1.0f,  0.0f, 0.0f },
+    { 1.0f,  1.0f,  1.0f,  1.0f, 0.0f },
+    {-1.0f,  1.0f, -1.0f,  0.0f, 1.0f },
     { 1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
-    {-1.0f, -1.0f,  1.0f,       0,      0 },
-    { 1.0f, -1.0f,  1.0f,  1.0f,      0 },
-    {-1.0f, -1.0f, -1.0f,       0, 1.0f },
+    {-1.0f, -1.0f,  1.0f,  0.0f, 0.0f },
+    { 1.0f, -1.0f,  1.0f,  1.0f, 0.0f },
+    {-1.0f, -1.0f, -1.0f,  0.0f, 1.0f },
     { 1.0f, -1.0f, -1.0f,  1.0f, 1.0f },
-    { 1.0f, -1.0f,  1.0f,       0,      0 },
-    { 1.0f,  1.0f,  1.0f,  1.0f,      0 },
-    { 1.0f, -1.0f, -1.0f,       0, 1.0f },
+    { 1.0f, -1.0f,  1.0f,  0.0f, 0.0f },
+    { 1.0f,  1.0f,  1.0f,  1.0f, 0.0f },
+    { 1.0f, -1.0f, -1.0f,  0.0f, 1.0f },
     { 1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
-    {-1.0f, -1.0f,  1.0f,       0,      0 },
-    {-1.0f,  1.0f,  1.0f,  1.0f,      0 },
-    {-1.0f, -1.0f, -1.0f,       0, 1.0f },
+    {-1.0f, -1.0f,  1.0f,  0.0f, 0.0f },
+    {-1.0f,  1.0f,  1.0f,  1.0f, 0.0f },
+    {-1.0f, -1.0f, -1.0f,  0.0f, 1.0f },
     {-1.0f,  1.0f, -1.0f,  1.0f, 1.0f },
 };
 
-static const uint16_t s_cubeIndices[36] =
+static const eU16 s_cubeIndices[36] =
 {
      0,  2,  1,
      1,  2,  3,
@@ -120,7 +120,7 @@ void _fillGeoBuffers(eGeometry *geo, ePtr param)
 
     eGfx->beginLoadGeometry(geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
     {
-        //eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*8 );
+        //eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
         //eMemCopy(ip, &s_cubeTriStrip[0], sizeof(eU16)*14 );
          eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
 
@@ -145,9 +145,15 @@ void _fillGeoBuffers(eGeometry *geo, ePtr param)
             eF32 phase = startPhase * 10;
             eSimpleVtx& src = s_cubeVertices[j];
             eSimpleVtx& dest = *reinterpret_cast<eSimpleVtx*>(vp + j);
+
+            // pos
             dest.pos.x = src.pos.x * (1.0f + 0.1f * eSin(phase));
             dest.pos.y = src.pos.y * (1.0f + 0.2f * eCos(phase + 60.0f));
             dest.pos.z = src.pos.z * (1.0f + 0.3f * eSin(phase + 120.0f));
+
+            // uv
+            dest.uv.u = s_cubeVertices[j].uv.u;
+            dest.uv.v = s_cubeVertices[j].uv.v;
         }
     }
     eGfx->endLoadGeometry(geo);
@@ -184,10 +190,10 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     /*eSimpleVtx* vp = nullptr;
     eU16* ip = nullptr;
 
-    eGfx->beginLoadGeometry(m_geo, 8, (ePtr*)&vp, 14, (ePtr*)&ip);
+    eGfx->beginLoadGeometry(m_geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
     {
-        eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*8 );
-        eMemCopy(ip, &s_cubeTriStrip[0], sizeof(eU16)*14 );
+        eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
+         eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
     }
     eGfx->endLoadGeometry(m_geo);*/
 
@@ -195,7 +201,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
 
 
-    //eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
+   // eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
 
     const eColor colors[2] = {eCOL_CYAN, eCOL_ORANGE};
     eArray<eColor> data(64*64);
@@ -209,18 +215,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                                     bgfx::TextureFormat::RG32F, bgfx::TextureFormat::R8
                                };
 
-    enum eTextureFormat
-    {
-        eTFO_ARGB8,
-        eTFO_ARGB16,
-        eTFO_ARGB16F,
-        eTFO_DEPTH32F,
-        eTFO_R16F,
-        eTFO_R32F,
-        eTFO_GR16F,
-        eTFO_GR32F,
-        eTFO_R8,
-    };
+
 
 
     const bgfx::Memory* mem = bgfx::makeRef(&data[0], 64*64*sizeof(eU32));
