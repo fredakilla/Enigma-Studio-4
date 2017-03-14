@@ -186,9 +186,15 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     eSimpleVtx *vp = nullptr;
     eGfx->beginLoadGeometry(m_geoQuad, 4, (ePtr *)&vp);
     {
-        vp[0].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(0, 0));
+        /*vp[0].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(0, 0));
         vp[1].set(eVector3((eF32)r.left,  (eF32)r.bottom, 0.0f), eVector2(1, 0));
         vp[2].set(eVector3((eF32)r.right, (eF32)r.bottom, 0.0f), eVector2(1, 1));
+        vp[3].set(eVector3((eF32)r.right, (eF32)r.top,    0.0f), eVector2(0, 1));*/
+
+
+        vp[0].set(eVector3((eF32)r.left,  (eF32)r.bottom, 0.0f), eVector2(1, 0));
+        vp[1].set(eVector3((eF32)r.right, (eF32)r.bottom, 0.0f), eVector2(1, 1));
+        vp[2].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(0, 0));
         vp[3].set(eVector3((eF32)r.right, (eF32)r.top,    0.0f), eVector2(0, 1));
     }
     eGfx->endLoadGeometry(m_geoQuad);
@@ -238,6 +244,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
     eTexture2dDx11* tex2 = eGfx->createChessTexture(64, 64, 8, eCOL_DARKGRAY, eCOL_RED);
 
+
+
     ///const eColor colors[2] = {eCOL_CYAN, eCOL_ORANGE};
     ///eArray<eColor> data(64*64);
     ///
@@ -284,8 +292,14 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
 
 
+
+
+
             // render cube
+            for(int i=0; i<5; i++)
             {
+                eTexture2dDx11* texArray[] = { tex, tex2 };
+
                 // set render states
                 eRenderState &rs = eGfx->freshRenderState();
                 rs.targets[0] = eGraphics::TARGET_SCREEN;
@@ -294,22 +308,20 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.viewport.set(0, 0, 800, 600);
                 rs.ps = m_psQuad;
                 rs.vs = m_vsQuad;
-                rs.textures[0] = tex;
+                rs.textures[0] = tex;//texArray[i%2];
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
 
                 // set viewport
                 eCamera cam(45.0f, (eF32)800/600, 0.1f, 1000.0f);
                 eMatrix4x4 mtx;
-                mtx.lookAt(eVector3(2,2,-5), eVector3(0,0,0), eVector3(0,1,0));
+                mtx.lookAt(eVector3(0,8,-25), eVector3(0,0,0), eVector3(0,1,0));
                 cam.setViewMatrix(mtx);
-                eMatrix4x4 model;
-                //model.identity();
-                model.fromQuat(eQuat(eVector3(0,0,1), time));
-                cam.activate(model);
+                eTransform trans;
+                trans.rotate(eQuat(eVector3(time, time, time)));
+                trans.translate(eVector3(-5+3*i,0,0));
+                cam.activate(trans.getMatrix());
 
-                // render cube
-
-                ///bgfx::setTexture(0, s_texColor, m_textureColor);
+                // render cube                
                 eGfx->renderGeometry(m_geo);
 
             }
