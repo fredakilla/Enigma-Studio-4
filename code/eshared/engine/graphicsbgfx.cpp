@@ -2239,23 +2239,48 @@ void eGraphicsDx11::_activateTargets()
 
 // bgfx state map for eCullMode
 static const eU64 STATE_CULL_MODE[] = {
-    0
-    , BGFX_STATE_CULL_CCW
-    , BGFX_STATE_CULL_CW
+    0                                   // eCULL_NONE,
+    , BGFX_STATE_CULL_CCW               // eCULL_FRONT,
+    , BGFX_STATE_CULL_CW                // eCULL_BACK
 };
 
 // bgfx state map for eDepthFunc
 static const eU64 STATE_DEPTH_FUNC[] = {
-    0
-    , BGFX_STATE_DEPTH_TEST_LESS
-    , BGFX_STATE_DEPTH_TEST_EQUAL
-    , BGFX_STATE_DEPTH_TEST_LEQUAL
-    , BGFX_STATE_DEPTH_TEST_GREATER
-    , BGFX_STATE_DEPTH_TEST_NOTEQUAL
-    , BGFX_STATE_DEPTH_TEST_GEQUAL
-    , BGFX_STATE_DEPTH_TEST_ALWAYS
+    0                                   // eDF_NEVER,
+    , BGFX_STATE_DEPTH_TEST_LESS        // eDF_LESS,
+    , BGFX_STATE_DEPTH_TEST_EQUAL       // eDF_EQUAL,
+    , BGFX_STATE_DEPTH_TEST_LEQUAL      // eDF_LEQUAL,
+    , BGFX_STATE_DEPTH_TEST_GREATER     // eDF_GREATER,
+    , BGFX_STATE_DEPTH_TEST_NOTEQUAL    // eDF_NOTEQUAL,
+    , BGFX_STATE_DEPTH_TEST_GEQUAL      // eDF_GEQUAL,
+    , BGFX_STATE_DEPTH_TEST_ALWAYS      // eDF_ALWAYS
 };
 
+// bgfx state map for eBlendMode
+static const eU64 STATE_BLEND_MODE[] = {
+    0
+    , BGFX_STATE_BLEND_ZERO             // eBM_ZERO,
+    , BGFX_STATE_BLEND_ONE              // eBM_ONE,
+    , BGFX_STATE_BLEND_SRC_COLOR        // eBM_SRCCOLOR,
+    , BGFX_STATE_BLEND_INV_SRC_COLOR    // eBM_INVSRCCOLOR,
+    , BGFX_STATE_BLEND_SRC_ALPHA        // eBM_SRCALPHA,
+    , BGFX_STATE_BLEND_INV_SRC_ALPHA    // eBM_INVSRCALPHA,
+    , BGFX_STATE_BLEND_DST_ALPHA        // eBM_DSTALPHA,
+    , BGFX_STATE_BLEND_INV_DST_ALPHA    // eBM_INVDSTALPHA,
+    , BGFX_STATE_BLEND_DST_COLOR        // eBM_DSTCOLOR,
+    , BGFX_STATE_BLEND_INV_DST_COLOR    // eBM_INVDSTCOLOR,
+};
+
+
+// bgfx state map for eBlendOp
+static const eU64 STATE_BLEND_OP[] = {
+    0
+    , BGFX_STATE_BLEND_EQUATION_ADD     // eBO_ADD,
+    , BGFX_STATE_BLEND_EQUATION_SUB     // eBO_SUB,
+    , BGFX_STATE_BLEND_EQUATION_REVSUB  // eBO_INVSUB,
+    , BGFX_STATE_BLEND_EQUATION_MIN     // eBO_MIN,
+    , BGFX_STATE_BLEND_EQUATION_MAX     // eBO_MAX
+};
 
 void eGraphicsDx11::_activateRenderState()
 {
@@ -2265,7 +2290,17 @@ void eGraphicsDx11::_activateRenderState()
     bgfxState |= (m_rsEdit.depthTest && m_rsEdit.depthWrite) ? BGFX_STATE_DEPTH_WRITE : 0;
     bgfxState |= STATE_DEPTH_FUNC[m_rsEdit.depthFunc];
 
-    // blend state
+    // blend state    
+    if(m_rsEdit.blending)
+    {
+        eU64 src = STATE_BLEND_MODE[m_rsEdit.blendSrc+1];   // enums offset by 1
+        eU64 dst = STATE_BLEND_MODE[m_rsEdit.blendDst+1];   // enums offset by 1
+        eU64 srcA = STATE_BLEND_MODE[m_rsEdit.blendSrc];
+        eU64 dstA = STATE_BLEND_MODE[m_rsEdit.blendDst];
+
+        bgfxState |= BGFX_STATE_BLEND_FUNC_SEPARATE(src, dst, srcA, dstA);
+        bgfxState |= STATE_BLEND_OP[m_rsEdit.blendOp];
+    }
     bgfxState |= m_rsEdit.colorWrite ? BGFX_STATE_RGB_WRITE : 0;
 
     // sampler states
