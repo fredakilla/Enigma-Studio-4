@@ -508,7 +508,7 @@ void eGraphicsDx11::resizeBackbuffer(eU32 width, eU32 height)
 
 void eGraphicsDx11::clear(eInt clearMode, const eColor &col)
 {
-    _activateRenderState();
+    //@@_activateRenderState();
 
     //@@// color target has to be cleared?
     //@@if (clearMode&eCM_COLOR)
@@ -735,9 +735,6 @@ eRenderStateDx11 & eGraphicsDx11::freshRenderState()
     m_rsEdit.targets[0] = TARGET_SCREEN;
     m_rsEdit.viewport.setWidth(m_wndWidth);
     m_rsEdit.viewport.setHeight(m_wndHeight);
-
-    // BGFX default state
-    m_rsEdit.bgfxState = BGFX_STATE_DEFAULT;
 
     return m_rsEdit;
 }
@@ -1113,6 +1110,8 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     eU32 triCount = 0;
     eU32 lineCount = 0;
 
+    m_rsEdit.primitiveType = 0;
+
     switch (geo->primType)
     {
     case eGPT_TRILIST:
@@ -1125,6 +1124,7 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
         //@@topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         triCount = geo->usedVerts/4*2;
         eASSERT(!geo->indexed);
+        m_rsEdit.primitiveType |= BGFX_STATE_PT_TRISTRIP;
         break;
 
     case eGPT_LINELIST:
@@ -1135,15 +1135,17 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     case eGPT_TRISTRIPS:
         //@@topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
         triCount = geo->usedVerts-2;
-        m_rsEdit.bgfxState |= BGFX_STATE_PT_TRISTRIP;
+        m_rsEdit.primitiveType |= BGFX_STATE_PT_TRISTRIP;
         break;
 
     case eGPT_LINESTRIPS:
         //@@topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
         lineCount = geo->usedVerts-1;
-        m_rsEdit.bgfxState |= BGFX_STATE_PT_LINESTRIP;
+        m_rsEdit.primitiveType |= BGFX_STATE_PT_LINESTRIP;
         break;
     }
+
+
 
 #ifdef eEDITOR
     m_renderStats.batches++;
@@ -1212,34 +1214,34 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     }
 
     // render geometry
-    if (geo->primType == eGPT_QUADLIST)
-    {
-        //@@m_devCtx->IASetIndexBuffer(m_geoBufs[GBID_IB_QUAD]->d3dBuf, DXGI_FORMAT_R16_UINT, 0);
-        const eU32 numIndices = triCount*3;
-
-        //@@if (insts.size())
-        //@@    @@m_devCtx->DrawIndexedInstanced(numIndices, insts.size(), 0, 0, 0);
-        //@@else
-        //@@    m_devCtx->DrawIndexed(numIndices, 0, 0);
-    }
-    else if (geo->indexed)
-    {
-        //@@m_devCtx->IASetIndexBuffer(geo->ib->d3dBuf, (geo->idxSize == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT), geo->ibPos);
-
-        //@@if (insts.size())
-        //@@    m_devCtx->DrawIndexedInstanced(geo->usedIndices, insts.size(), 0, 0, 0);
-        //@@else
-        //@@    m_devCtx->DrawIndexed(geo->usedIndices, 0, 0);
-    }
-    else
-    {
-        //@@m_devCtx->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
-        //@@
-        //@@if (insts.size())
-        //@@    m_devCtx->DrawInstanced(geo->usedVerts, insts.size(), 0, 0);
-        //@@else
-        //@@    m_devCtx->Draw(geo->usedVerts, 0);
-    }
+    //@@if (geo->primType == eGPT_QUADLIST)
+    //@@{
+    //@@    //@@m_devCtx->IASetIndexBuffer(m_geoBufs[GBID_IB_QUAD]->d3dBuf, DXGI_FORMAT_R16_UINT, 0);
+    //@@    const eU32 numIndices = triCount*3;
+    //@@
+    //@@    //@@if (insts.size())
+    //@@    //@@    @@m_devCtx->DrawIndexedInstanced(numIndices, insts.size(), 0, 0, 0);
+    //@@    //@@else
+    //@@    //@@    m_devCtx->DrawIndexed(numIndices, 0, 0);
+    //@@}
+    //@@else if (geo->indexed)
+    //@@{
+    //@@    //@@m_devCtx->IASetIndexBuffer(geo->ib->d3dBuf, (geo->idxSize == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT), geo->ibPos);
+    //@@
+    //@@    //@@if (insts.size())
+    //@@    //@@    m_devCtx->DrawIndexedInstanced(geo->usedIndices, insts.size(), 0, 0, 0);
+    //@@    //@@else
+    //@@    //@@    m_devCtx->DrawIndexed(geo->usedIndices, 0, 0);
+    //@@}
+    //@@else
+    //@@{
+    //@@    //@@m_devCtx->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+    //@@    //@@
+    //@@    //@@if (insts.size())
+    //@@    //@@    m_devCtx->DrawInstanced(geo->usedVerts, insts.size(), 0, 0);
+    //@@    //@@else
+    //@@    //@@    m_devCtx->Draw(geo->usedVerts, 0);
+    //@@}
 }
 
 eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags, eTextureFormat format)
@@ -1873,7 +1875,7 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
     bgfx::init();
     bgfx::reset(m_wndWidth, m_wndHeight, BGFX_RESET_NONE);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
-    bgfx::setViewRect(0, 0, 0, m_wndWidth, m_wndHeight);
+    //bgfx::setViewRect(0, 0, 0, m_wndWidth, m_wndHeight);
 
     uniforms.c_mvpMtx = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4);
 
@@ -2162,7 +2164,7 @@ void eGraphicsDx11::_activateConstBuffers()
 
 void eGraphicsDx11::_activateTextures()
 {
-    if (!eMemEqual(m_rsEdit.textures, m_rsActive.textures, sizeof(m_rsEdit.textures)))
+    //@@if (!eMemEqual(m_rsEdit.textures, m_rsActive.textures, sizeof(m_rsEdit.textures)))
     {
         //@@ID3D11ShaderResourceView *srvs[eGFX_MAXTEX];
         //@@for (eU32 i=0; i<eGFX_MAXTEX; i++)
@@ -2234,6 +2236,57 @@ void eGraphicsDx11::_activateTargets()
     }
 }
 
+
+// bgfx state map for eCullMode
+static const eU64 STATE_CULL_MODE[] = {
+    0
+    , BGFX_STATE_CULL_CCW
+    , BGFX_STATE_CULL_CW
+};
+
+// bgfx state map for eDepthFunc
+static const eU64 STATE_DEPTH_FUNC[] = {
+    0
+    , BGFX_STATE_DEPTH_TEST_LESS
+    , BGFX_STATE_DEPTH_TEST_EQUAL
+    , BGFX_STATE_DEPTH_TEST_LEQUAL
+    , BGFX_STATE_DEPTH_TEST_GREATER
+    , BGFX_STATE_DEPTH_TEST_NOTEQUAL
+    , BGFX_STATE_DEPTH_TEST_GEQUAL
+    , BGFX_STATE_DEPTH_TEST_ALWAYS
+};
+
+
+void eGraphicsDx11::_activateRenderState()
+{
+    eU64 bgfxState = 0;
+
+    // depth stencil state
+    bgfxState |= (m_rsEdit.depthTest && m_rsEdit.depthWrite) ? BGFX_STATE_DEPTH_WRITE : 0;
+    bgfxState |= STATE_DEPTH_FUNC[m_rsEdit.depthFunc];
+
+    // blend state
+    bgfxState |= m_rsEdit.colorWrite ? BGFX_STATE_RGB_WRITE : 0;
+
+    // sampler states
+    // none
+
+    // raster state
+    bgfxState |= STATE_CULL_MODE[m_rsEdit.cullMode];
+    bgfxState |= m_rsEdit.primitiveType;
+
+    // set bgfx state
+    bgfx::setState(bgfxState);
+
+    // set textures
+    _activateTextures();
+
+    // set viewport
+    eRect vp = m_rsEdit.viewport;
+    bgfx::setViewRect(0, vp.left, vp.top, vp.getWidth(), vp.getHeight() );
+}
+
+#if 0
 void eGraphicsDx11::_activateRenderState()
 {
     ePROFILER_FUNC();
@@ -2520,6 +2573,7 @@ void eGraphicsDx11::_activateRenderState()
     // replace active state
     m_rsActive = m_rsEdit;
 }
+#endif
 
 eIProgramBgfx * eGraphicsDx11::_findProgram(const eVertexShaderDx11* vs, const ePixelShaderDx11* ps)
 {

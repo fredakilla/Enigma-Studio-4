@@ -338,7 +338,7 @@ struct eRenderStateDx11
     eIConstBufferDx11 *         constBufs[eGFX_MAXCBS];
 
     // BGFX
-    eU64                        bgfxState;
+    eU64                        primitiveType;  // primitive type state
 };
 #pragma pack(pop)
 
