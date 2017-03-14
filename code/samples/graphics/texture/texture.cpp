@@ -241,8 +241,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
     // create texture
 
-    eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eCOL_CYAN, eCOL_ORANGE);
-    eTexture2dDx11* tex2 = eGfx->createChessTexture(64, 64, 8, eCOL_DARKGRAY, eCOL_RED);
+    eTexture2dDx11* tex = eGfx->createChessTexture(64, 64, 16, eColor(0,255,0,100), eCOL_ORANGE);
+    eTexture2dDx11* tex2 = eGfx->createChessTexture(64, 64, 8, eCOL_DARKGRAY, eColor(255,0,0,100));
 
 
 
@@ -268,7 +268,12 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     ///bgfx::UniformHandle s_texColor = bgfx::createUniform("s_texColor", bgfx::UniformType::Int1);
 
 
-
+    // create a random array of loaded texture
+    eRandomize(eTimer::getTimeMs());
+    eTexture2dDx11* texList[] = { tex, tex2 };
+    eTexture2dDx11* randomTex[5];
+    for(int i=0; i<5; i++)
+        randomTex[i] = texList[eRandom()%2];
 
     // Update --------------------------------------------------------------------------------------------------
 
@@ -298,8 +303,6 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
             // render cube
             for(int i=0; i<5; i++)
             {
-                eTexture2dDx11* texArray[] = { tex, tex2 };
-
                 // set render states
                 eRenderState &rs = eGfx->freshRenderState();
                 rs.targets[0] = eGraphics::TARGET_SCREEN;
@@ -308,13 +311,16 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.viewport.set(0, 0, 800, 600);
                 rs.ps = m_psQuad;
                 rs.vs = m_vsQuad;
-                rs.textures[0] = tex;//texArray[i%2];
+                rs.textures[0] = randomTex[i];
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
+                rs.blending = eTRUE;
+                rs.blendSrc = eBM_SRCALPHA;
+                rs.blendDst = eBM_INVSRCALPHA;
 
                 // set viewport
                 eCamera cam(45.0f, (eF32)800/600, 0.1f, 1000.0f);
                 eMatrix4x4 mtx;
-                mtx.lookAt(eVector3(0,8,-25), eVector3(0,0,0), eVector3(0,1,0));
+                mtx.lookAt(eVector3(0,8,-10), eVector3(0,0,0), eVector3(0,1,0));
                 cam.setViewMatrix(mtx);
                 eTransform trans;
                 trans.rotate(eQuat(eVector3(time, time, time)));
@@ -323,7 +329,6 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
                 // render cube                
                 eGfx->renderGeometry(m_geo);
-
             }
 
 
@@ -344,7 +349,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;*/
 
                 eRenderState &rs = eGfx->getRenderState();
-                rs.textures[0] = tex2;
+                rs.textures[0] = randomTex[0];
 
                 // set viewport
                 const eCamera cam(0.0f, (eF32)800, 0.0f, (eF32)600, -1.0f, 1.0f);
