@@ -1181,6 +1181,7 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     }
 
     // load bgfx program
+    eASSERT(m_rsEdit.vs && m_rsEdit.ps); // no shaders set in render state
     eProgramBgfx* program = loadProgram(m_rsEdit.vs, m_rsEdit.ps);
     eASSERT(bgfx::isValid(program->handle));
 
