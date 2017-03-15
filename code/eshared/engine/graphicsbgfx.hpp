@@ -537,12 +537,21 @@ private:
     // -- BGFX
     eArray<eIProgramBgfx*>      m_programs;
 
-    struct eUniforms
+    /*struct eUniforms
     {
-        bgfx::UniformHandle c_mvpMtx;
+        // cbuffer Camera : register(eCBI_CAMERA)
+
+        bgfx::UniformHandle c_viewMtx;                 // float4x4
+        bgfx::UniformHandle c_projMtx;                 // float4x4
+        bgfx::UniformHandle c_mvpMtx;                  // float4x4
+        bgfx::UniformHandle c_itViewMtx;               // float4x4
+        bgfx::UniformHandle c_camWorldPos;             // float3
+        bgfx::UniformHandle c_camClearColor;           // float4
+        //bgfx::UniformHandle u_modelViewProj;           // float4x4
+
     };
 
-    eUniforms uniforms;
+    eUniforms uniforms;*/
 
 
 	/*

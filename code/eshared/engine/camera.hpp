@@ -76,6 +76,27 @@ private:
     eF32                m_aspect;
     eMatrix4x4          m_projMtx;
     ePlane              m_frustumPlanes[6];
+
+
+    // BGFX
+
+public:
+
+    struct eUniforms
+    {
+        // cbuffer Camera : register(eCBI_CAMERA)
+        bgfx::UniformHandle c_viewMtx;                 // float4x4
+        bgfx::UniformHandle c_projMtx;                 // float4x4
+        bgfx::UniformHandle c_mvpMtx;                  // float4x4
+        bgfx::UniformHandle c_itViewMtx;               // float4x4
+        bgfx::UniformHandle c_camWorldPos;             // float3
+        bgfx::UniformHandle c_camClearColor;           // float4
+    };
+
+
+    static eUniforms uniforms;
+
+
 };
 
 #endif // CAMERA_HPP

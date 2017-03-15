@@ -783,6 +783,14 @@ eGeometry * eGraphicsDx11::addGeometry(eInt flags, eVertexType vtxType, eGeoPrim
                 .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float, true)
                 .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float, true)
                 .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+
+                .add(bgfx::Attrib::TexCoord1,   4, bgfx::AttribType::Float) // transformation matrix
+                .add(bgfx::Attrib::TexCoord2,   4, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord3,   4, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord4,   4, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord5,   3, bgfx::AttribType::Float) // normal matrix
+                .add(bgfx::Attrib::TexCoord6,   3, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord7,   3, bgfx::AttribType::Float)
                 .end();
         break;
 
@@ -1089,13 +1097,27 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
 {
     // BGFX set uniforms for this draw call
 
-    eMatrix4x4 mvp = eGfx->getModelMatrix() * eGfx->getViewMatrix() * eGfx->getProjMatrix();
-
-    // Note: matrix is temporary transposed to avoid to modify vertex HLSL shader code for now.
-    // but later this command will be deleted and vertex shaders will adjusted (matrix multiplication order in shader)
-    mvp.transpose();
-
-    bgfx::setUniform(uniforms.c_mvpMtx, mvp);
+    ///eMatrix4x4 mvp = eGfx->getModelMatrix() * eGfx->getViewMatrix() * eGfx->getProjMatrix();
+    ///
+    ///// Note: matrix is temporary transposed to avoid to modify vertex HLSL shader code for now.
+    ///// but later this command will be deleted and vertex shaders will adjusted (matrix multiplication order in shader)
+    ///mvp.transpose();
+    ///
+   ///// bgfx::setUniform(uniforms.c_mvpMtx, mvp);
+    ///
+    ///// m_itViewMtx
+    ///eMatrix4x4 invViewMtx = eGfx->getViewMatrix().inverse();
+    ///eMatrix4x4 m_itViewMtx = invViewMtx;
+    ///m_itViewMtx.transpose();
+    ///
+    ///
+    ///
+    ///bgfx::setUniform(uniforms.c_viewMtx, eGfx->getViewMatrix());         // = bgfx::createUniform("c_viewMtx", bgfx::UniformType::Mat4); // float4x4
+    ///bgfx::setUniform(uniforms.c_projMtx, eGfx->getProjMatrix());         // = bgfx::createUniform("c_projMtx", bgfx::UniformType::Mat4); // float4x4
+    ///bgfx::setUniform(uniforms.c_mvpMtx, mvp);           // = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4); // float4x4
+    ///bgfx::setUniform(uniforms.c_itViewMtx, m_itViewMtx);       // = bgfx::createUniform("c_itViewMtx", bgfx::UniformType::Mat4); // float4x4
+    ///bgfx::setUniform(uniforms.c_camWorldPos, invViewMtx.getTranslation());      // = bgfx::createUniform("c_camWorldPos", bgfx::UniformType::Vec4); // float3
+    ///bgfx::setUniform(uniforms.c_camClearColor, (void*)0xFF2233FF);   // = bgfx::createUniform("c_camClearColor", bgfx::UniformType::Vec4); // float4
 
     //------------------------
 
@@ -1888,7 +1910,15 @@ void eGraphicsDx11::_createDeviceAndSwapChain()
     bgfx::setDebug(BGFX_DEBUG_TEXT);
     //bgfx::setViewRect(0, 0, 0, m_wndWidth, m_wndHeight);
 
-    uniforms.c_mvpMtx = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4);
+    //uniforms.c_mvpMtx = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4);
+
+    eCamera::uniforms.c_viewMtx          = bgfx::createUniform("c_viewMtx", bgfx::UniformType::Mat4); // float4x4
+    eCamera::uniforms.c_projMtx          = bgfx::createUniform("c_projMtx", bgfx::UniformType::Mat4); // float4x4
+    eCamera::uniforms.c_mvpMtx           = bgfx::createUniform("c_mvpMtx", bgfx::UniformType::Mat4); // float4x4
+    eCamera::uniforms.c_itViewMtx        = bgfx::createUniform("c_itViewMtx", bgfx::UniformType::Mat4); // float4x4
+    eCamera::uniforms.c_camWorldPos      = bgfx::createUniform("c_camWorldPos", bgfx::UniformType::Vec4); // float3
+    eCamera::uniforms.c_camClearColor    = bgfx::createUniform("c_camClearColor", bgfx::UniformType::Vec4); // float4
+
 
 
     // test runtime compiling bgfx shader
@@ -2700,7 +2730,7 @@ void eGraphicsDx11::_loadShader(const eChar* src, const eChar *define, eIShaderD
     eString path = fullname.substr(0, fullname.find_last_of("\\/")).c_str();
 
     eString binFile(rawname + ".bin");
-    eString varyingDefFile(path + "/varying.def.sc");
+    eString varyingDefFile(path + "/simple.def.sc");
 
     // use shaderc to generate bgfx shader bin file
 

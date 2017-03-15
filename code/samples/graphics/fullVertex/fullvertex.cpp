@@ -202,7 +202,6 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     eGfx->setWindowTitle(wndTitle);
 
 
-    bool _fillWithCallBack = true;
 
 
     // Init --------------------------------------------------------------------------------------------------
@@ -238,34 +237,20 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
     // create geometry
 
     eGeometryDx11* m_geo = nullptr;
-    if(_fillWithCallBack)
-    {
-        // use callback function to fill geometry
 
-        m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_FULL, eGPT_TRILIST, _fillGeoBuffers, &timer);
-    }
-    else
-    {
-        // fill geometry here
 
-        m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_SIMPLE, eGPT_TRILIST);
+    m_geo = eGfx->addGeometry(eGEO_DYNAMIC | eGEO_IB16, eVTX_FULL, eGPT_TRILIST, _fillGeoBuffers, &timer);
 
-        eSimpleVtx* vp = nullptr;
-        eU16* ip = nullptr;
 
-        eGfx->beginLoadGeometry(m_geo, 24, (ePtr*)&vp, 36, (ePtr*)&ip);
-        {
-            eMemCopy(vp, &s_cubeVertices[0], sizeof(eSimpleVtx)*24 );
-            eMemCopy(ip, &s_cubeIndices[0], sizeof(eU16)*36 );
-        }
-        eGfx->endLoadGeometry(m_geo);
-    }
 
 
     // create shaders
 
     eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
     ePixelShader* m_psQuad = eGfx->loadPixelShader(eSHADER(ps_quad));
+
+    eVertexShader* m_vsDefault = eGfx->loadVertexShader(eSHADER(vs_instanced_geo));
+    ePixelShader* m_psDefault = eGfx->loadPixelShader(eSHADER(ps_nolight));
 
 
 
@@ -339,8 +324,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.cullMode = eCULL_NONE;
                 rs.depthTest = eTRUE;
                 rs.viewport.set(0, 0, 800, 600);
-                rs.ps = m_psQuad;
-                rs.vs = m_vsQuad;
+                rs.ps = m_psDefault;
+                rs.vs = m_vsDefault;
                 rs.textures[0] = randomTex[i];
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
                 rs.blending = eTRUE;
@@ -368,7 +353,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
             // render quad
             {
                 // set render states
-                /*eRenderState &rs = eGfx->freshRenderState();
+                eRenderState &rs = eGfx->freshRenderState();
                 rs.targets[0] = eGraphics::TARGET_SCREEN;
                 rs.cullMode = eCULL_NONE;
                 rs.depthTest = eTRUE;
@@ -376,10 +361,10 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.ps = m_psQuad;
                 rs.vs = m_vsQuad;
                 rs.textures[0] = tex;
-                rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;*/
+                rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
 
-                eRenderState &rs = eGfx->getRenderState();
-                rs.textures[0] = randomTex[0];
+                //eRenderState &rs = eGfx->getRenderState();
+                //rs.textures[0] = randomTex[0];
 
                 // set viewport
                 const eCamera cam(0.0f, (eF32)800, 0.0f, (eF32)600, -1.0f, 1.0f);

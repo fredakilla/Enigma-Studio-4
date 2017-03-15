@@ -16,6 +16,8 @@
 #include "../math/math.hpp"
 #include "engine.hpp"
 
+eCamera::eUniforms eCamera::uniforms;
+
 eCamera::eCamera(eF32 fovY, eF32 aspect, eF32 zNear, eF32 zFar) :
     m_type(eCAM_PERSPECTIVE),
     m_fovY(fovY),
@@ -59,6 +61,20 @@ void eCamera::activate(const eMatrix4x4 &modelMtx) const
     rs.constBufs[eCBI_CAMERA] = &cb;
 
     eGfx->setMatrices(modelMtx, m_viewMtx, m_projMtx);    
+
+    // BGFX
+
+    eMatrix4x4 mvp = modelMtx*m_viewMtx*m_projMtx;
+    // Note: matrix is temporary transposed to avoid to modify vertex HLSL shader code during bgfx port.
+    // but later (when using bgfx language shader) this command will be deleted and vertex shaders will be adjusted (matrix multiplication order inside shader)
+    mvp.transpose();
+
+    bgfx::setUniform(uniforms.c_viewMtx, m_viewMtx);
+    bgfx::setUniform(uniforms.c_projMtx, m_projMtx);
+    bgfx::setUniform(uniforms.c_mvpMtx, mvp);
+    bgfx::setUniform(uniforms.c_itViewMtx, m_itViewMtx);
+    bgfx::setUniform(uniforms.c_camWorldPos, getWorldPos());
+    bgfx::setUniform(uniforms.c_camClearColor, &m_clearCol);
 }
 
 eBool eCamera::intersectsSphere(const eVector3 &sphereCenter, eF32 sphereRadius) const
