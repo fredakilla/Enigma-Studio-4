@@ -131,6 +131,8 @@ win32: DEFINES +=   _HAS_ITERATOR_DEBUGGING=1 \
 
 INCLUDEPATH += $${MYLIBS}/bgfx/include
 INCLUDEPATH += $${MYLIBS}/bx/include
+INCLUDEPATH += $${MYLIBS}/bx/include/compat/msvc    # fix <alloca.h> include error
+INCLUDEPATH += $${MYLIBS}/bgfx/tools/shaderc        # include shaderc as lib for runtime compile
 
 
 #--------------------------------------------------------------------
@@ -141,6 +143,7 @@ CONFIG(debug,debug|release) {
 #message( debug )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxDebug
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbxDebug
+win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lshadercDebug
 } else {
 #message( release )
 win32:LIBS += -L$${MYLIBS}/bgfx/.build/win64_vs2015/bin -lbgfxRelease
@@ -176,7 +179,7 @@ HEADERS += \
     eshared/engine/engine.hpp \
     eshared/engine/font.hpp \
     eshared/engine/graphics.hpp \
-    eshared/engine/graphicsdx11.hpp \
+    #eshared/engine/graphicsdx11.hpp \
     eshared/engine/irenderable.hpp \
     eshared/engine/light.hpp \
     eshared/engine/material.hpp \
@@ -259,7 +262,7 @@ SOURCES += \
     eshared/engine/demo.cpp \
     eshared/engine/engine.cpp \
     eshared/engine/font.cpp \
-    eshared/engine/graphicsdx11.cpp \
+    #eshared/engine/graphicsdx11.cpp \
     eshared/engine/culler.cpp \      
     eshared/engine/editmesh.cpp \
     eshared/engine/effect.cpp \
@@ -356,6 +359,13 @@ DISTFILES += \
 
 
 
+#message(d3d11)
+#HEADERS += eshared/engine/graphicsdx11.hpp
+#SOURCES += eshared/engine/graphicsdx11.cpp
 
+message(bgfx)
+DEFINES += RENDERER_BGFX
+HEADERS += eshared/engine/graphicsbgfx.hpp
+SOURCES += eshared/engine/graphicsbgfx.cpp
 
 

@@ -244,6 +244,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
 
 
+
     // create shaders
 
     eVertexShader* m_vsQuad = eGfx->loadVertexShader(eSHADER(vs_quad));
@@ -312,11 +313,11 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
 
 
-
+            //eRenderer->renderQuad(eRect(50,50,256,256), eSize(800,600), tex);
 
 
             // render cube
-            for(int i=0; i<5; i++)
+            /*for(int i=0; i<1; i++)
             {
                 // set render states
                 eRenderState &rs = eGfx->freshRenderState();
@@ -324,8 +325,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.cullMode = eCULL_NONE;
                 rs.depthTest = eTRUE;
                 rs.viewport.set(0, 0, 800, 600);
-                rs.ps = m_psDefault;
-                rs.vs = m_vsDefault;
+                rs.ps = m_psQuad;// m_psDefault;
+                rs.vs = m_vsQuad;//m_vsDefault;
                 rs.textures[0] = randomTex[i];
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
                 rs.blending = eTRUE;
@@ -344,7 +345,8 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
 
                 // render cube                
                 eGfx->renderGeometry(m_geo);
-            }
+
+            }*/
 
 
 
@@ -361,6 +363,7 @@ eInt WINAPI WinMain(HINSTANCE, HINSTANCE, eChar *, eInt)
                 rs.ps = m_psQuad;
                 rs.vs = m_vsQuad;
                 rs.textures[0] = tex;
+                rs.textures[1] = tex2;
                 rs.texFlags[0] = eTMF_CLAMP | eTMF_NEAREST;
 
                 //eRenderState &rs = eGfx->getRenderState();

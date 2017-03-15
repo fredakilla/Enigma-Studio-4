@@ -1364,7 +1364,13 @@ eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags
                                                                   //, mem
                                                                   );
 
-        tex->uniformHandle = bgfx::createUniform("tex_name"//eIntToStr(tex->uniformHandle.idx)
+
+
+        tex->uniformHandle = bgfx::createUniform(//eIntToStr(tex->uniformHandle.idx)
+                                                 //eIntToStr(eHashInt(tex->uniformHandle.idx))
+                                                 //eIntToStr(tex->uniformHandle.idx)
+                                                 eIntToStr(eHashPtr(tex))
+
                                                  , bgfx::UniformType::Int1);
 
 

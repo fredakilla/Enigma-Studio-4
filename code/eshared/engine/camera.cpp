@@ -62,7 +62,7 @@ void eCamera::activate(const eMatrix4x4 &modelMtx) const
 
     eGfx->setMatrices(modelMtx, m_viewMtx, m_projMtx);    
 
-    // BGFX
+#ifdef RENDERER_BGFX
 
     eMatrix4x4 mvp = modelMtx*m_viewMtx*m_projMtx;
     // Note: matrix is temporary transposed to avoid to modify vertex HLSL shader code during bgfx port.
@@ -75,6 +75,8 @@ void eCamera::activate(const eMatrix4x4 &modelMtx) const
     bgfx::setUniform(uniforms.c_itViewMtx, m_itViewMtx);
     bgfx::setUniform(uniforms.c_camWorldPos, getWorldPos());
     bgfx::setUniform(uniforms.c_camClearColor, &m_clearCol);
+
+#endif
 }
 
 eBool eCamera::intersectsSphere(const eVector3 &sphereCenter, eF32 sphereRadius) const
