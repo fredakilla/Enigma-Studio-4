@@ -131,6 +131,7 @@ struct eITextureDx11
 
     bgfx::TextureHandle textureHandle;
     bgfx::UniformHandle uniformHandle;
+    bgfx::FrameBufferHandle frameBufferHandle;
 
     eITextureDx11()
     {
@@ -339,6 +340,7 @@ struct eRenderStateDx11
 
     // BGFX
     eU64                        primitiveType;  // primitive type state
+    eU8                        viewId;  // view ID
 };
 #pragma pack(pop)
 

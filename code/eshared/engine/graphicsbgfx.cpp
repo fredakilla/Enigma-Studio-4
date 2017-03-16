@@ -1217,8 +1217,11 @@ void eGraphicsDx11::renderGeometry(eGeometry *geo, const eArray<eInstVtx> &insts
     eProgramBgfx* program = loadProgram(m_rsEdit.vs, m_rsEdit.ps);
     eASSERT(bgfx::isValid(program->handle));
 
+    //ePRINT("view id = %d", m_rsEdit.viewId);
     // submit geometry
-    bgfx::submit(0, program->handle);
+    bgfx::submit(m_rsEdit.viewId, program->handle);
+
+    return;
 
     //-- BGFX
 
@@ -1340,9 +1343,48 @@ eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags
         desc.BindFlags |= D3D11_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE;
         desc.Usage = D3D11_USAGE_DEFAULT;
 
-        eCallDx(m_dev->CreateTexture2D(&desc, nullptr, &tex->d3dTex));
-        eCallDx(m_dev->CreateRenderTargetView(tex->d3dTex, nullptr, &tex->d3dRtv));
-        eCallDx(m_dev->CreateShaderResourceView(tex->d3dTex, nullptr, &tex->d3dSrv));
+        //@@eCallDx(m_dev->CreateTexture2D(&desc, nullptr, &tex->d3dTex));
+        //@@eCallDx(m_dev->CreateRenderTargetView(tex->d3dTex, nullptr, &tex->d3dRtv));
+        //@@eCallDx(m_dev->CreateShaderResourceView(tex->d3dTex, nullptr, &tex->d3dSrv));
+
+
+        //-- BGFX
+
+        tex->textureHandle = bgfx::createTexture2D(  (eU16)tex->width
+                                                   , (eU16)tex->height
+                                                   , (bool)false
+                                                   , 1
+                                                   , TEXTURE_BGFX_FORMAT_INFOS[tex->format]
+                                                   , BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP
+
+                );
+
+        bgfx::TextureHandle m_fbtextures = bgfx::createTexture2D(uint16_t(tex->width),
+                                                                 uint16_t(tex->height),
+                                                                 false,
+                                                                 1,
+                                                                 bgfx::TextureFormat::D16,
+                                                                 BGFX_TEXTURE_RT_WRITE_ONLY);
+
+
+
+
+        bgfx::TextureHandle fbtextures[] = { tex->textureHandle, m_fbtextures };
+
+        //m_fbtextures[0] = bgfx::createTexture2D(uint16_t(m_width), uint16_t(m_height), false, 1, bgfx::TextureFormat::BGRA8, BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP);
+        //        m_fbtextures[1] = bgfx::createTexture2D(uint16_t(m_width), uint16_t(m_height), false, 1, bgfx::TextureFormat::D16, BGFX_TEXTURE_RT_WRITE_ONLY);
+        tex->frameBufferHandle = bgfx::createFrameBuffer(BX_COUNTOF(fbtextures), fbtextures, true);
+
+
+
+        /*tex->uniformHandle = bgfx::createUniform(//eIntToStr(tex->uniformHandle.idx)
+                                                 //eIntToStr(eHashInt(tex->uniformHandle.idx))
+                                                 //eIntToStr(tex->uniformHandle.idx)
+                                                 eIntToStr(eHashPtr(tex))
+
+                                                 , bgfx::UniformType::Int1);*/
+
+
     }
     else
     {
@@ -1350,8 +1392,8 @@ eTexture2dDx11 * eGraphicsDx11::addTexture2d(eU32 width, eU32 height, eInt flags
         desc.CPUAccessFlags = (tex->dynamic ? D3D11_CPU_ACCESS_WRITE : 0);
         desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE|(tex->mipmaps ? D3D11_BIND_RENDER_TARGET : 0);
 
-        eCallDx(m_dev->CreateTexture2D(&desc, nullptr, &tex->d3dTex));
-        eCallDx(m_dev->CreateShaderResourceView(tex->d3dTex, nullptr, &tex->d3dSrv));
+        //@@eCallDx(m_dev->CreateTexture2D(&desc, nullptr, &tex->d3dTex));
+        //@@eCallDx(m_dev->CreateShaderResourceView(tex->d3dTex, nullptr, &tex->d3dSrv));
 
         //-- BGFX
 
@@ -2228,6 +2270,7 @@ void eGraphicsDx11::_activateTextures()
                 eASSERT(bgfx::isValid(m_rsEdit.textures[i]->textureHandle));
                 eASSERT(bgfx::isValid(m_rsEdit.textures[i]->uniformHandle));
 
+                //if(m_rsEdit.textures[i]->uniformHandle.idx != 0)
                 bgfx::setTexture(i, m_rsEdit.textures[i]->uniformHandle, m_rsEdit.textures[i]->textureHandle);
             }
         }
@@ -2253,6 +2296,49 @@ void eGraphicsDx11::_activateUavBuffers()
 
 void eGraphicsDx11::_activateTargets()
 {
+#ifdef RENDERER_BGFX
+
+    for (eU32 i=0; i<eGFX_MAXMRT; i++)
+    {
+        if (!m_rsEdit.targets[i])
+        {
+            // no render target set
+        }
+        else if (m_rsEdit.targets[i] == TARGET_SCREEN)
+        {
+            // render target is screen
+
+
+
+            bgfx::setViewClear(i
+                        , BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
+                        , 0x70303055, 1.0f, 0
+            );
+
+            bgfx::setViewRect(i, 0, 0, eGfx->getWndWidth(), eGfx->getWndHeight());
+
+            m_rsEdit.viewId = i;
+        }
+        else
+        {
+            // render target set
+
+            bgfx::setViewClear(i
+                        , BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
+                        , 0x30303055, 1.0f, 0
+            );
+
+            bgfx::setViewRect(i, 0, 0, m_rsEdit.targets[i]->width, m_rsEdit.targets[i]->height);
+            bgfx::setViewFrameBuffer(i, m_rsEdit.targets[i]->frameBufferHandle);
+
+            m_rsEdit.viewId = i;
+        }
+    }
+
+
+
+
+#else
     // first all D3D resource pointers are collected
     // as a backbuffer resize might alter them. in
     // that case comparing engine resources is not
@@ -2281,6 +2367,7 @@ void eGraphicsDx11::_activateTargets()
         m_dsvActive = dsv;
         eMemCopy(m_rtvsActive, rtvs, sizeof(rtvs));
     }
+#endif
 }
 
 
@@ -2362,6 +2449,10 @@ void eGraphicsDx11::_activateRenderState()
 
     // set textures
     _activateTextures();
+
+    // set targets
+    _activateTargets();
+
 
     // set viewport
     eRect vp = m_rsEdit.viewport;
