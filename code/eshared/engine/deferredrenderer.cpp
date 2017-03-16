@@ -128,11 +128,45 @@ void eDeferredRenderer::renderQuad(const eRect &r, const eSize &size, eTexture2d
     eSimpleVtx *vp = nullptr;
     eGfx->beginLoadGeometry(m_geoQuad, 4, (ePtr *)&vp);
     {
+
+#ifdef RENDERER_BGFX
+
+        /*
+         *  CCW
+         *  0----2
+         *  |  / |
+         *  | /  |
+         *  1----3
+         *
+        */
+
+        /*vp[0].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(0, 0));
+        vp[1].set(eVector3((eF32)r.left,  (eF32)r.bottom, 0.0f), eVector2(0, 1));
+        vp[2].set(eVector3((eF32)r.right, (eF32)r.top,    0.0f), eVector2(1, 0));
+        vp[3].set(eVector3((eF32)r.right, (eF32)r.bottom, 0.0f), eVector2(1, 1));*/
+
+       /*
+        * CW
+        *  0----1
+        *  |  / |
+        *  | /  |
+        *  2----3
+       */
+
+        vp[0].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(0, 0));
+        vp[1].set(eVector3((eF32)r.right, (eF32)r.top,    0.0f), eVector2(1, 0));
+        vp[2].set(eVector3((eF32)r.left,  (eF32)r.bottom, 0.0f), eVector2(0, 1));
+        vp[3].set(eVector3((eF32)r.right, (eF32)r.bottom, 0.0f), eVector2(1, 1));
+
+#else
         vp[0].set(eVector3((eF32)r.left,  (eF32)r.top,    0.0f), eVector2(scrollUv.u,          scrollUv.v+tileUv.v));
         vp[1].set(eVector3((eF32)r.left,  (eF32)r.bottom, 0.0f), eVector2(scrollUv.u,          scrollUv.v));
         vp[2].set(eVector3((eF32)r.right, (eF32)r.bottom, 0.0f), eVector2(scrollUv.u+tileUv.u, scrollUv.v));
         vp[3].set(eVector3((eF32)r.right, (eF32)r.top,    0.0f), eVector2(scrollUv.u+tileUv.u, scrollUv.v+tileUv.v));
+#endif
+
     }
+
     eGfx->endLoadGeometry(m_geoQuad);
     eGfx->renderGeometry(m_geoQuad);
 }
