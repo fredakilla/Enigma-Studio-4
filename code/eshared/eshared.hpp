@@ -21,5 +21,6 @@
 #include "synth/synth.hpp"
 #include "opstacking/opstacking.hpp"
 #include "packing/packing.hpp"
+#include "system/memorytrack.hpp"
 
 #endif // ESHARED_HPP
