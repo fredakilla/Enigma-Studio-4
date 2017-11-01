@@ -100,6 +100,7 @@ DEFINES +=  \
         eUSE_SSE \
         eAUTO_SHADERS \
         QT_NO_KEYWORDS \
+        eDEFINE_MEMORYTRACK
 } else {
 # release
 DEFINES +=  \
@@ -119,6 +120,12 @@ DEFINES +=  \
 DEFINES -= UNICODE
 DEFINES += _MBCS
 
+
+#--------------------------------------------------------------------
+# includes directories
+#--------------------------------------------------------------------
+
+INCLUDEPATH += eshared
 
 #--------------------------------------------------------------------
 # libraries link
@@ -226,6 +233,9 @@ HEADERS += \
     estudio4/gui/trackedit.hpp \
     estudio4/resources/resource.h \    
     configinfo.hpp \
+    eshared/system/bitarray.hpp \
+    eshared/system/compiler.hpp \
+    eshared/system/memorytrack.hpp
   
    
 
@@ -308,7 +318,9 @@ SOURCES += \
     estudio4/gui/renderview.cpp \
     estudio4/gui/timelineview.cpp \
     estudio4/gui/trackedit.cpp \    
-    estudio4/estudio4.cpp
+    estudio4/estudio4.cpp \
+    eshared/system/bitarray.cpp \
+    eshared/system/memorytrack.cpp
 
    
 RESOURCES += \
