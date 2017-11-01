@@ -22,7 +22,7 @@
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QLabel>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class eButtonLabel : public QLabel
 {

@@ -18,7 +18,7 @@
 #include <QtWidgets/QDialog>
 
 #include "ui_findopdlg.h"
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class eFindOpDlg : public QDialog, protected Ui::FindOpDlg
 {

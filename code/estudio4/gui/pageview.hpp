@@ -26,7 +26,7 @@
 #include "addopdlg.hpp"
 #include "findopdlg.hpp"
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class QDomDocument;
 class QDomElement;

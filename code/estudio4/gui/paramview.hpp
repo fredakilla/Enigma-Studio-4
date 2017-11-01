@@ -17,7 +17,7 @@
 
 #include <QtWidgets/QScrollArea>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class QVBoxLayout;
 class QLineEdit;

@@ -19,7 +19,7 @@
 #include <QtWidgets/QRubberBand>
 #include <QtWidgets/QMenu>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class ePathView : public QGraphicsView
 {

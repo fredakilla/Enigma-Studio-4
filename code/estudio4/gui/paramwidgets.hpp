@@ -20,7 +20,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QToolButton>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 #include "trackedit.hpp"
 
 // track edit for float, integer and byte parameter

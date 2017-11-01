@@ -17,7 +17,7 @@
 
 #include <QtWidgets/QTreeWidget>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class QDomElement;
 

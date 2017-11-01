@@ -19,7 +19,7 @@
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QMenu>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 // item in the sequencer view
 class eDemoSeqItem : public QGraphicsItem

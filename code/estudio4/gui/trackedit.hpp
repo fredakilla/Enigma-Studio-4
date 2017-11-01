@@ -17,7 +17,7 @@
 
 #include <QtWidgets/QLineEdit>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 // basic track edit for floats, integer, and bytes
 class eTrackEdit : public QLineEdit

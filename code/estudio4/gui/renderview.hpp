@@ -19,7 +19,7 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 // viewport for rendering. all kinds of
 // operators are displayed in this widget.

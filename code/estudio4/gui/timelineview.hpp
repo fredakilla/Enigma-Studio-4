@@ -17,7 +17,7 @@
 
 #include <QtWidgets/QFrame>
 
-#include "../../eshared/eshared.hpp"
+#include "eshared.hpp"
 
 class eTimelineView : public QFrame
 {
