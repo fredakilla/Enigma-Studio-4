@@ -15,6 +15,13 @@
 #ifndef THREADING_HPP
 #define THREADING_HPP
 
+#include "compiler.hpp"
+#include "types.hpp"
+
+#if eCONFIG_OS == eCONF_OS_LINUX
+    #include <pthread.h>
+#endif
+
 class eProfilerThread;
 
 // callback function for threads (if you prefer
@@ -78,10 +85,16 @@ private:
 #ifdef eEDITOR
     eThreadCtx          m_ctx;
 #endif
-    ePtr                m_handle;
     eThreadFunc         m_threadFunc;
     eThreadPriority     m_prio;
     eU32                m_tid;
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
+    ePtr                m_handle;
+#endif
+#if eCONFIG_OS == eCONF_OS_LINUX
+    pthread_mutex_t     m_handle;
+#endif
 };
 
 class eMutex
@@ -97,8 +110,14 @@ public:
     eBool               isLocked() const;
 
 private:
-    ePtr                m_handle;
     eBool               m_locked;
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
+    ePtr                m_handle;
+#endif
+#if eCONFIG_OS == eCONF_OS_LINUX
+    pthread_mutex_t     m_handle;
+#endif
 };
 
 class eScopedLock

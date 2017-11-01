@@ -15,9 +15,17 @@
 #ifndef SIMD_HPP
 #define SIMD_HPP
 
+#ifdef __SSE__
 #include <xmmintrin.h>
+#endif
+
+#ifdef __SSE2__
 #include <emmintrin.h>
+#endif
+
+#ifdef __SSE4_1__
 #include <smmintrin.h>
+#endif
 
 #define eSimdSelect(v, i0, i1, i2, i3)              _mm_shuffle_ps(v, v, _MM_SHUFFLE(i0, i1, i2, i3))
 #define eSimdShuffle(v0, v1, i00, i01, i10, i11)    _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(i00, i01, i10, i11))

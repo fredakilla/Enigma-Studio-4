@@ -15,11 +15,23 @@
 #ifndef RUNTIME_HPP
 #define RUNTIME_HPP
 
-// global constants (don't change into
-// constants, it's a size thing!)
+#include "compiler.hpp"
 
 #include <math.h>
-#include <intrin.h>
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
+    #include <intrin.h>
+    #define eALLOC_STACK(type, count)  ((type *)_alloca((count)*sizeof(type))) // macro because it has to get inlined!
+#endif
+
+#if eCONFIG_OS == eCONF_OS_LINUX
+    #include <mmintrin.h>
+    #include <xmmintrin.h>
+    #include <alloca.h>
+    #define eALLOC_STACK(type, count)  ((type *)alloca((count)*sizeof(type))) // macro because it has to get inlined!
+#endif
+
+// global constants (don't change into constants, it's a size thing!)
 
 #define eSQRT2          1.41421356237f
 #define ePI             3.1415926535897932384626433832795f
@@ -32,13 +44,25 @@
 #define eMAX_RAND       2147483647
 #define eMAX_NAME_LEN   64
 #define eMAX_PATH_LEN   256
+#define e360            360.0f
 
 // function macros
 
 #define eELEMENT_COUNT(a)    (sizeof(a)/sizeof(a[0]))
 #define eASSERT_ALIGNED16(x) eASSERT(eU32(x)%16 == 0)
 
-inline void eDebugBreak() { __debugbreak(); }
+eChar * ePrintMsg(const eChar *fmt, ...);
+#define ePRINT(...) ePrintMsg(__VA_ARGS__)
+
+
+// a kind of non-blocking sleep for functions
+// to give a minimum delay in ms between 2 executions
+#define eFUNCDELAY(X)                                 \
+    eU32 static funcDelayLastTime = 0;                \
+    if(eTimer::getTimeMs() - funcDelayLastTime < X)   \
+        return;                                       \
+    funcDelayLastTime = eTimer::getTimeMs();
+
 
 #ifdef eDEBUG
     #define eASSERT(expr)                                   \
@@ -51,39 +75,6 @@ inline void eDebugBreak() { __debugbreak(); }
     #define eASSERT(x)
 #endif
 
-// overloaded new and delete operators. WinAPI
-// versions for release build and memory tracking
-// versions for debug build.
-#if defined(eRELEASE) && defined(ePLAYER)
-    ePtr eCDECL operator new(size_t size);
-    ePtr eCDECL operator new [] (size_t size);
-    void eCDECL operator delete(ePtr ptr);
-    void eCDECL operator delete [] (ePtr ptr);
-#else
-    // warning: assumption here is that if there is a
-    // symbol multiply defined in an .obj and a .lib
-    // file, the compiler uses the symbol from the
-    // .obj file. this is especially important when
-    // externally linking 3rd-party libraries
-    #undef new
-
-    ePtr eCDECL operator new(size_t size, const eChar *file, eU32 line);
-    ePtr eCDECL operator new[](size_t size, const eChar *file, eU32 line);
-    ePtr eCDECL operator new(size_t size);
-
-    void eCDECL operator delete(ePtr ptr);
-    void eCDECL operator delete [] (ePtr ptr);
-
-    // also overloaded delete operators to assure
-    // that memory is freed when initialization
-    // throws an exception
-    void eCDECL operator delete (ePtr ptr, const eChar *file, eU32 line);
-    void eCDECL operator delete [] (ePtr ptr, const eChar *file, eU32 line);
-
-    #define new new(__FILE__, __LINE__)
-#endif
-
-#define eALLOC_STACK(type, count)  ((type *)_alloca((count)*sizeof(type))) // macro because it has to get inlined!
 
 // non-inlineable functions
 
@@ -97,8 +88,6 @@ void    eSetLogHandler(eLogHandler logHandler, ePtr param);
 
 
 void    eWriteToLog(const eChar *msg);
-void    eLeakDetectorStart();
-void    eLeakDetectorStop();
 eBool   eShowAssertion(const eChar *exp, const eChar *file, eU32 line);
 void    eShowError(const eChar *error);
 void    eFatal(eU32 exitCode);
@@ -191,74 +180,25 @@ eU16    eMakeWord(eU8 lo, eU8 hi);
 
 // inlineable functions
 
-eFORCEINLINE eF32 eAbs(eF32 x)
-{
-    return fabsf(x);
-}
-
-eFORCEINLINE eU32 eAbs(eInt x)
-{
-    return ((x^(x>>31))-(x>>31));
-}
-
-// faster float to long conversion than c-lib's
-// default version. must be called explicitly.
-eFORCEINLINE eInt eFtoL(eF32 x)
-{
-    //eInt ret = (eInt)x;
-    //return ret;
-    //ret = _mm_cvt_ss2si(_mm_load_ss(&x));
-    return _mm_cvt_ss2si(_mm_load_ss(&x));
-    //return (eInt)(x+0.001) / 1L;
-    //return (eInt)x;
-}
-
-eFORCEINLINE eU64 eDtoULL(eF64 x)
-{
-    long long value_long = static_cast<long long>(x + 0.5);
-    return static_cast<eU64>(value_long);
-
-   /* __asm
-    {
-        fld     dword ptr [x]
-        push    eax
-        fistp   dword ptr [esp]
-        pop     eax
-    }*/
-}
-
-eINLINE eU32 eSignBit(eF32 x)
-{
-    return (eU32 &)x&0x80000000;
-}
-
-eINLINE eF32 eSign(eF32 x)
-{
-    // test exponent and mantissa bits: is input zero?
-    if (((eInt &)x&0x7fffffff) == 0)
-        return 0.0f;
-
-    // mask sign bit in x, set it in r if necessary
-    eF32 r = 1.0f;
-    (eInt &)r |= eSignBit(x);
-    return r;
-}
-
-eINLINE void eUndenormalise(eF32 &sample)
-{
-    if (((*(eU32 *)&sample)&0x7f800000) == 0)
-        sample = 0.0f;
-}
-
-eINLINE eInt eSign(eInt x)
-{
-    return (x != 0)|(x>>(sizeof(eInt)*8-1));
-}
+eF32 eAbs(eF32 x);
+eU32 eAbs(eInt x);
+eInt eFtoL(eF32 x);
+eU64 eDtoULL(eF64 x);
+eU32 eSignBit(eF32 x);
+eF32 eSign(eF32 x);
+void eUndenormalise(eF32 &sample);
+eInt eSign(eInt x);
 
 template<class T> eU32 eHashPtr(const T * const &ptr)
 {
     return eHashInt((eInt)ptr);
 }
+/*
+template<class T> eU32 eHashPtr2(const char * ptr)
+{
+    //@@return eHashInt((eInt)ptr);
+    return eHashInt((eInt)ptr);
+}*/
 
 template<class T> void eSetBit(T &t, eU32 index)
 {
@@ -304,6 +244,10 @@ template<class T> void eDeleteArray(T &ptr)
     ptr = nullptr;
 }
 
+#define eSAFE_DELETE(p)         { if(p) eDelete(p); }
+#define eSAFE_DELETE_ARRAY(p)   { if(p) eDeleteArray(p); }
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
 template<class T> void eReleaseCom(T &ptr)
 {
     if (ptr)
@@ -312,6 +256,7 @@ template<class T> void eReleaseCom(T &ptr)
         ptr = nullptr;
     }
 }
+#endif
 
 template<class T> void eSwap(T &a, T &b)
 {

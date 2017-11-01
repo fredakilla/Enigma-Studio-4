@@ -12,101 +12,26 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include "compiler.hpp"
+
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+#endif
+
+#if eCONFIG_OS == eCONF_OS_LINUX
+    #include <stdarg.h>
+    #include <cstring>      // memcpy, memmove, memcmp, memset
+#endif
 
 #include "types.hpp"
 #include "runtime.hpp"
 
-#if defined(eRELEASE) && defined(ePLAYER)
-ePtr eCDECL operator new(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
+#include <stdio.h>
 
-ePtr eCDECL operator new [](size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-void eCDECL operator delete(ePtr ptr)
-{
-    HeapFree(GetProcessHeap(), 0, ptr);
-}
-
-void eCDECL operator delete [] (ePtr ptr)
-{
-    HeapFree(GetProcessHeap(), 0, ptr);
-}
-#else
-#undef new
-#undef delete
-#include <crtdbg.h>
-#include <malloc.h>
-#undef new
-#undef delete
 
 static eU64 g_allocedMem = 0;
-static eU64 g_allocCount = 0;
-
-ePtr operator new(size_t size, const eChar *file, eU32 line)
-{
-#ifdef eDEBUG
-    ePtr ptr = _malloc_dbg(size, _NORMAL_BLOCK, file, line);
-#else
-    ePtr ptr = malloc(size);
-#endif
-
-#ifdef eEDITOR
-    g_allocedMem += _msize(ptr);
-    g_allocCount++;
-#endif
-
-    return ptr;
-}
-
-ePtr eCDECL operator new [](size_t size, const eChar *file, eU32 line)
-{
-    return ::operator new(size, file, line);
-}
-
-ePtr eCDECL operator new(size_t size)
-{
-    return ::operator new(size, "", 0);
-}
-
-void eCDECL operator delete(ePtr ptr)
-{
-    if (!ptr)
-        return;
-
-#ifdef eEDITOR
-    g_allocedMem -= _msize(ptr);
-    g_allocCount--;
-#endif
-
-#ifdef eDEBUG
-    _free_dbg(ptr, _NORMAL_BLOCK);
-#else
-    free(ptr);
-#endif
-}
-
-void eCDECL operator delete [] (ePtr ptr)
-{
-    ::operator delete(ptr);
-}
-
-void eCDECL operator delete (ePtr ptr, const eChar *file, eU32 line)
-{
-    ::operator delete [] (ptr);
-}
-
-void eCDECL operator delete [] (ePtr ptr, const eChar *file, eU32 line)
-{
-    ::operator delete(ptr);
-}
-#endif
 
 ePtr eAllocAlignedAndZero(size_t size,size_t alignment)
 {
@@ -153,8 +78,7 @@ void eWriteToLog(const eChar *msg)
 #endif
 
 	// always output message to console
-    OutputDebugString(msg);
-    OutputDebugString("\n");
+    printf("%s\n", msg);
 }
 
 #ifndef ePLAYER
@@ -165,40 +89,27 @@ eU64 eGetAllocatedMemory()
 
 eU64  eGetTotalVirtualMemory()
 {
+#if eCONFIG_OS == eCONF_OS_WINDOWS
     MEMORYSTATUSEX mse;
     eMemSet(&mse, 0, sizeof(mse));
     mse.dwLength = sizeof(mse);
     GlobalMemoryStatusEx(&mse);
     return mse.ullTotalVirtual;
+#endif
 }
 #endif
 
-void eLeakDetectorStart()
-{
-#ifdef eDEBUG
-    const eInt curFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
-    _CrtSetDbgFlag(curFlags|_CRTDBG_LEAK_CHECK_DF|_CRTDBG_ALLOC_MEM_DF);
-#endif
-}
-
-void eLeakDetectorStop()
-{
-#ifdef eDEBUG
-    const eInt oldFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
-    _CrtSetDbgFlag(oldFlags & ~(_CRTDBG_LEAK_CHECK_DF|_CRTDBG_ALLOC_MEM_DF));
-#endif
-}
 
 #ifdef eDEBUG
 // returns if user pressed the "try again" button
 eBool eShowAssertion(const eChar *expr, const eChar *file, eU32 line)
 {
-    eChar program[256];
-    GetModuleFileName(GetModuleHandle(nullptr), program, 256);
+    //eChar program[256];
+    //GetModuleFileName(GetModuleHandle(nullptr), program, 256);
 
     eChar text[1024];
     eStrCopy(text, "Debug assertion failed!\n\nProgram: ");
-    eStrAppend(text, program);
+    //eStrAppend(text, program);
     eStrAppend(text, "\nFile: ");
     eStrAppend(text, file);
     eStrAppend(text, "\nLine: ");
@@ -208,6 +119,7 @@ eBool eShowAssertion(const eChar *expr, const eChar *file, eU32 line)
     eStrAppend(text, "\n\nPress retry to debug the application, cancel to stop execution\n"
                      "and continue to ignore assertion.");
 
+#if eCONFIG_OS == eCONF_OS_WINDOWS
     const eInt button = MessageBox(nullptr, text, "Enigma - Assertion",
                                    MB_TASKMODAL|MB_ICONERROR|MB_CANCELTRYCONTINUE);
 
@@ -215,6 +127,17 @@ eBool eShowAssertion(const eChar *expr, const eChar *file, eU32 line)
         return eTRUE;
     else if (button == IDCANCEL)
         eFatal(-1);
+#else
+
+    char cmd[1024];
+
+    sprintf(cmd, "/usr/bin/zenity --question --text='%s'", text);
+    system(cmd);
+
+    //eFatal(-1);
+    return eTRUE;
+
+#endif
 
     return eFALSE;
 }
@@ -222,12 +145,22 @@ eBool eShowAssertion(const eChar *expr, const eChar *file, eU32 line)
 
 void eShowError(const eChar *error)
 {
+#if eCONFIG_OS == eCONF_OS_WINDOWS
     MessageBox(nullptr, error, "Enigma - Error", MB_TASKMODAL|MB_ICONERROR);
+#else
+    char cmd[255];
+    sprintf(cmd, "/usr/bin/xmessage -center %s", error);
+    system(cmd);
+#endif
 }
 
 void eFatal(eU32 exitCode)
 {
+#if eCONFIG_OS == eCONF_OS_WINDOWS
     ExitProcess(exitCode);
+#else
+    exit(exitCode);
+#endif
 }
 
 ePtr eMemRealloc(ePtr ptr, size_t oldLength, size_t newLength)
@@ -236,21 +169,6 @@ ePtr eMemRealloc(ePtr ptr, size_t oldLength, size_t newLength)
         return ptr;
 
     return realloc(ptr,newLength);
-
-    /*// reallocation necessary?
-    if (newLength <= oldLength && ptr)
-        return ptr;
-
-    ePtr newPtr = new eU8[newLength];
-
-    if (ptr)
-    {
-        eU8 *bptr = (eU8 *)ptr;
-        eMemCopy(newPtr, bptr, oldLength);
-        eDeleteArray(bptr);
-    }
-
-    return newPtr;*/
 }
 
 void eMemSet(ePtr dst, eU8 val, size_t count)
@@ -261,56 +179,16 @@ void eMemSet(ePtr dst, eU8 val, size_t count)
 void eMemCopy(ePtr dst, eConstPtr src, size_t count)
 {
     memcpy(dst,src,count);
-/*
-#ifdef eUSE_MMX
-    memcpy(dst, src, count);
-#else
-    eU8 *pd = (eU8 *)dst;
-    const eU8 *ps = (eU8 *)src;
-
-    while (count--)
-        *pd++ = *ps++;
-#endif*/
 }
 
 void eMemMove(ePtr dst, eConstPtr src, size_t count)
 {
     memmove(dst, src, count);
-
-    /*const eU8 *psrc = (const eU8 *)src;
-    eU8 *pdst = (eU8 *)dst;
-
-    if (dst <= src || pdst >= psrc+count)
-    {
-        // non-overlapping buffers, so copy from
-        // lower addresses to higher addresses
-        while (count--)
-            *pdst++ = *psrc++;
-    }
-    else
-    {
-        // overlapping buffers, so copy from
-        // higher addresses to lower addresses
-        pdst = pdst+count-1;
-        psrc = psrc+count-1;
-
-        while (count--)
-            *pdst-- = *psrc--;
-    }*/
 }
 
 eBool eMemEqual(eConstPtr mem0, eConstPtr mem1, size_t count)
 {
     return !memcmp(mem0, mem1, count);
-
-   /* const eU8 *ptr0 = (eU8 *)mem0;
-    const eU8 *ptr1 = (eU8 *)mem1;
-
-    for(size_t i=0; i<count; i++)
-        if (ptr0[i] != ptr1[i])
-            return eFALSE;
-
-    return eTRUE;*/
 }
 
 void eStrClear(eChar *str)
@@ -521,6 +399,19 @@ void eRandomize(eU32 seed)
     if (!g_seed)
         g_seed = 1;
 }
+
+#if eCONFIG_OS == eCONF_OS_LINUX
+#include <sys/time.h>
+
+unsigned GetTickCount()
+{
+        struct timeval tv;
+        if(gettimeofday(&tv, NULL) != 0)
+                return 0;
+
+        return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+}
+#endif
 
 eU32 eRandomSeed()
 {
@@ -871,3 +762,71 @@ eBool eClosedIntervalsOverlap(eInt start0, eInt end0, eInt start1, eInt end1)
     return (start1 <= end0 && start0 <= end1);
 }
 
+
+eF32 eAbs(eF32 x)
+{
+    return fabsf(x);
+}
+
+eU32 eAbs(eInt x)
+{
+    return ((x^(x>>31))-(x>>31));
+}
+
+// faster float to long conversion than c-lib's
+// default version. must be called explicitly.
+eInt eFtoL(eF32 x)
+{
+    return _mm_cvt_ss2si(_mm_load_ss(&x));
+    //return (eInt)(x+0.001) / 1L;
+    //return (eInt)x;
+}
+
+eU64 eDtoULL(eF64 x)
+{
+    long long value_long = static_cast<long long>(x + 0.5);
+    return static_cast<eU64>(value_long);
+}
+
+
+eU32 eSignBit(eF32 x)
+{
+    return (eU32 &)x&0x80000000;
+}
+
+eF32 eSign(eF32 x)
+{
+    // test exponent and mantissa bits: is input zero?
+    if (((eInt &)x&0x7fffffff) == 0)
+        return 0.0f;
+
+    // mask sign bit in x, set it in r if necessary
+    eF32 r = 1.0f;
+    (eInt &)r |= eSignBit(x);
+    return r;
+}
+
+void eUndenormalise(eF32 &sample)
+{
+    if (((*(eU32 *)&sample)&0x7f800000) == 0)
+        sample = 0.0f;
+}
+
+eInt eSign(eInt x)
+{
+    return (x != 0)|(x>>(sizeof(eInt)*8-1));
+}
+
+eChar * ePrintMsg(const eChar *fmt, ...)
+{
+    static eChar buffer[255] = "";
+
+    va_list argptr;
+    va_start(argptr,fmt);
+    vsprintf(buffer, fmt, argptr);
+    va_end(argptr);
+
+    eWriteToLog(buffer);
+
+    return buffer;
+}

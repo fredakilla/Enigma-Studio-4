@@ -238,3 +238,8 @@ eBool eString::operator != (const eChar *str) const
 {
     return !(*this == str);
 }
+
+const eChar * eString::c_str() const
+{
+    return &m_data[0];
+}

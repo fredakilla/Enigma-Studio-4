@@ -15,20 +15,11 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
+#include "compiler.hpp"
+
 // macros for concatenating strings for pre-processor
 #define eTOKENPASTE_DEF(x, y)   x##y
 #define eTOKENPASTE(x, y)       eTOKENPASTE_DEF(x, y)
-
-// visual c++ specific stuff
-#define eFASTCALL               __fastcall
-#define eFORCEINLINE            __forceinline
-#define eINLINE                 __inline
-#define eNORETURN               __declspec(noreturn)
-#define eALIGN16                __declspec(align(16))
-#define eNAKED                  __declspec(naked)
-#define eTHREADLOCAL            __declspec(thread)
-#define eCALLBACK               __stdcall
-#define eCDECL                  __cdecl
 
 // own types
 typedef unsigned char           eU8;
@@ -38,8 +29,8 @@ typedef short                   eS16;
 typedef unsigned int            eU32;
 typedef int                     eS32;
 typedef float                   eF32;
-typedef unsigned __int64        eU64;
-typedef signed __int64          eS64;
+typedef eU64TYPE                eU64;
+typedef eS64TYPE                eS64;
 typedef double                  eF64;
 typedef int                     eInt;
 typedef char                    eChar;
@@ -58,7 +49,6 @@ typedef eU32                    eID;
 #define eU8_MAX                 (0xffU)
 #define eS8_MIN                 (-128)
 #define eS8_MAX                 (127)
-
 #define eF32_MAX                (3.402823466e+38F)
 #define eF32_MIN                (-eF32_MAX)
 #define eF32_INF                (1e30f)

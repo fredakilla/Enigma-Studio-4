@@ -79,6 +79,8 @@ public:
 
     operator const eChar * () const;
 
+    const eChar *   c_str() const;
+
 private:
     eArray<eChar>   m_data;
 };

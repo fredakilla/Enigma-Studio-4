@@ -15,6 +15,16 @@
 #ifndef TIMER_HPP
 #define TIMER_HPP
 
+#include "compiler.hpp"
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS          // Windows system specific
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <windows.h>
+#elif  eCONFIG_OS == eCONF_OS_LINUX         // Unix based system specific
+    #include <sys/time.h>
+#endif
+
 class eTimer
 {
 public:
@@ -37,10 +47,20 @@ private:
     static eBool    m_inited;
 
 private:
-    eU64            m_startTime;
     eF32            m_elapsedHist[60];
     eU32            m_histIndex;
     eU32            m_histCount;
+
+#if eCONFIG_OS == eCONF_OS_WINDOWS
+    eU64            m_startTime;
+#else
+    //struct timespec m_startTime;
+    timeval         m_startTime;
+#endif
+
+
+
 };
 
 #endif // TIMER_HPP
+

@@ -19,6 +19,7 @@
 #include "runtime.hpp"
 #include "simd.hpp"
 #include "array.hpp"
+#include "bitarray.hpp"
 #include "string.hpp"
 #include "color.hpp"
 #include "point.hpp"
